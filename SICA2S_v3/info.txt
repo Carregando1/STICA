@@ -1,1 +1,0 @@
-IMPORTANT: This version is only for optimization of 2-state SICA simulations for speedup purposes. For an optimized version of n-state SICA, choose the NSICA_v2 version.
