@@ -1,0 +1,1 @@
+This version is exclusively for 2-state STICA. For simulating n-state STICA, use the NSTICA version instead.
