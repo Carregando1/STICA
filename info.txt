@@ -1,0 +1,14 @@
+Interpreting results- 
+2S = exclusively 2-state STICA; >2S = more than 2 state STICA.
+
+Results refer to the computed runtime of trials. 
+Trials are split into two categories- STICA Only trials and Genetic Algorithm trials.
+Runtimes are recorded in seconds.
+
+In STICA Only trials, results are indicated by the variables *data* (2S) or *dataincomp* (>2S). 
+Each result is recorded as a tuple ((grid size, iterations), runtime).
+In >2S results, the tuple is ((grid size, iterations, states), runtime).
+
+In Genetic Algorithm trials (generate_data.ipynb), results are indicated by the variable *timelogs*.
+The results are recorded as an array of runtimes, with the first element corresponding to the runtime of the first iteration.
+Following a comment indicating "GPU Naive-Comparable Trial Timelogs", either on STICA2S or NSTICA, the corresponding results are actually the last 320 values of the array printed below the comment.
