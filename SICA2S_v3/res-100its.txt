@@ -1,6 +1,0 @@
----Results for 32dim 100it genetic algorithm tests.---
-Orig: 74.91, std 0.48
-SICA Decomp not included as runtime would be too high.
-SICA System v2 (no opts): 2712.25, std 52.93
-SICA System v2 (surfacevol opt): CPU 15.71, std 0.28, GPU 14.96, std 0.17
-SICA System v2 (surfacevol + muts opt): CPU 4.57, std 0.07, GPU 
