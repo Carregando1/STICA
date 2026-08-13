@@ -1,1 +1,0 @@
-This version, V2, adds a construct for a constant number of IC/SRT mutations and revises the documentation. A new metric, surface area, is added. JAX JIT is not done because of the incompatibility of jnp.nonzero with JIT; jitting the remainder of the mutation algorithm compatible with JIT results in a slowdown.
