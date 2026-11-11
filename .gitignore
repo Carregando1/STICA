@@ -1,0 +1,78 @@
+# ---------------------------------------------------------------------------
+# Generated data and large files: keep these out of git.
+# Archive raw results in a data record (e.g. Zenodo) and reference it from the README.
+# ---------------------------------------------------------------------------
+
+# Experiment outputs written by the generate_data / timing notebooks
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.pkl
+*.pickle
+*.parquet
+*.feather
+gpu_test/
+cpu_test/
+results_raw/
+**/transformer/data/*
+!**/transformer/data/placeholder
+
+# Model checkpoints and training logs
+models/
+checkpoints/
+runs/
+lightning_logs/
+wandb/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+
+# 3D exports and renders
+*.stl
+*.obj
+*.mtl
+*.ply
+*.blend
+*.blend1
+*.mp4
+*.avi
+*.mov
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# Logs
+*.log
+logs/
+
+# ---------------------------------------------------------------------------
+# Python, Jupyter, environments, tooling
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+
+# Editors and OS files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
