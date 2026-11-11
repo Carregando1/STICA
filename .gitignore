@@ -76,3 +76,6 @@ venv/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Example and analysis outputs
+outputs/
