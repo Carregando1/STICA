@@ -63,24 +63,36 @@ def main(paths):
     import matplotlib.pyplot as plt
 
     rows, meta = load(paths)
-    fig, axes = plt.subplots(2, 2, figsize=(10, 7.5), layout="constrained")
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8), layout="constrained")
+    evo_x = "runs per call (1-core numba: one after another)"
     panels = [
         (axes[0, 0], "sim1d", "size", "cell_updates_per_s", None, "lattice width W (T = W steps)",
          "cell updates / s", "a  1D rule arrays, one trajectory"),
         (axes[0, 1], "sim2d", "size", "cell_updates_per_s", "states", "grid size G (G x G cells, T = G steps)",
          "cell updates / s", "b  2D STICA, one trajectory"),
-        (axes[1, 0], "sim1d_batch", "batch", "cell_updates_per_s", None, "independent 64 x 64 rule arrays per call",
+        (axes[0, 2], "sim1d_batch", "batch", "cell_updates_per_s", None, "independent 64 x 64 rule arrays per call",
          "cell updates / s", "c  1D rule arrays, batched"),
-        (axes[1, 1], "evo1d", "batch", "candidates_per_s", None, "runs per call (1-core numba: one after another)",
-         "candidate rule arrays evaluated / s", "d  Wolfram's lifetime-50 evolution"),
+        (axes[1, 0], "evo1d", "batch", "candidates_per_s", "variant", evo_x,
+         "candidate rule arrays evaluated / s", "d  Lifetime-50 evolution, 64 x 31"),
+        (axes[1, 1], "evo1d", "batch", "solved_per_s", "variant", evo_x, "solved runs / s",
+         "e  Lifetime-50 evolution: solutions"),
+        (axes[1, 2], "evo1d_large", "batch", "candidates_per_s", "variant", evo_x,
+         "candidate rule arrays evaluated / s", "f  Lifetime-500 evolution, 640 x 311"),
     ]
+    variant_ls = {"unpacked": "-", "unpacked, restart": "--", "packed": ":", "packed, restart": ":",
+                  "packed, restart, fused kernel": "-."}
     for ax, suite, x, y, extra, xlabel, ylabel, title in panels:
         for (tag, e), (xs, med, lo, hi) in series(rows, suite, x, y, extra).items():
             label, colour, marker = STYLE.get(tag, (tag, None, "o"))
-            ls = {None: "-", "2": "-", "3": "--", "4": ":"}[e]
-            lab = label if e in (None, "2") else None
-            ax.errorbar(xs, med, yerr=[np.subtract(med, lo), np.subtract(hi, med)], color=colour, marker=marker,
-                        ms=4, lw=1.2, ls=ls, capsize=2, label=lab)
+            if extra == "variant":
+                ls, lab = variant_ls.get(e, "-"), f"{label}: {e}"
+            else:
+                ls = {None: "-", "": "-", "2": "-", "3": "--", "4": ":"}[e]
+                lab = label if e in (None, "", "2") else None
+            med = np.maximum(med, 1e-9)
+            ax.errorbar(xs, med, yerr=[np.subtract(med, np.maximum(lo, 1e-9)), np.subtract(hi, med)],
+                        color=colour, marker=marker, ms=4, lw=1.6 if e and "fused" in str(e) else 1.1, ls=ls,
+                        capsize=2, label=lab)
         ax.set(xscale="log", yscale="log", xlabel=xlabel, ylabel=ylabel)
         ax.grid(alpha=0.25, which="both", lw=0.4)
         ax.set_title(title, loc="left", fontsize=10)
@@ -88,7 +100,7 @@ def main(paths):
     axes[0, 1].plot([], [], "k--", label="n = 3")
     axes[0, 1].plot([], [], "k:", label="n = 4")
     for ax in axes.flat:
-        ax.legend(fontsize=7)
+        ax.legend(fontsize=6)
     dev = next((m.get("device") for m in meta.values() if m.get("device") and m.get("platform_jax") == "gpu"), None)
     cpu = next((m.get("cpu") for m in meta.values() if m.get("cpu")), None)
     fig.suptitle(f"GPU: {dev or 'n/a'}   CPU: {cpu or 'n/a'}", fontsize=8)
@@ -96,10 +108,12 @@ def main(paths):
     fig.savefig(out, dpi=200)
     print(f"wrote {out}")
 
-    for suite, x, y, extra in [("sim1d", "size", "cell_updates_per_s", None), ("sim2d", "size", "cell_updates_per_s",
-                                                                                "states"),
+    for suite, x, y, extra in [("sim1d", "size", "cell_updates_per_s", None),
+                               ("sim2d", "size", "cell_updates_per_s", "states"),
                                ("sim1d_batch", "batch", "cell_updates_per_s", None),
-                               ("evo1d", "batch", "candidates_per_s", None)]:
+                               ("evo1d", "batch", "candidates_per_s", "variant"),
+                               ("evo1d", "batch", "solved_per_s", "variant"),
+                               ("evo1d_large", "batch", "candidates_per_s", "variant")]:
         s = series(rows, suite, x, y, extra)
         if not s:
             continue
@@ -109,8 +123,8 @@ def main(paths):
         print("|---|" + "---:|" * len(xs))
         for (tag, e), (xv, med, _, _) in s.items():
             d = dict(zip(xv, med))
-            name = STYLE.get(tag, (tag,))[0] + (f", n={e}" if e else "")
-            print(f"| {name} |" + "".join(f" {d[v]:.2e} |" if v in d else " — |" for v in xs))
+            name = STYLE.get(tag, (tag,))[0] + ((f": {e}" if extra == "variant" else f", n={e}") if e else "")
+            print(f"| {name} |" + "".join(f" {d[v]:.3g} |" if v in d else " — |" for v in xs))
 
 
 if __name__ == "__main__":

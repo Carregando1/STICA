@@ -1,14 +1,17 @@
 {
  "impl": "jax",
  "tag": "jax-cpu",
- "date": "2026-11-12T16:19:53",
+ "date": "2026-11-12T18:36:12",
  "python": "3.13.5",
  "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
  "argv": [
   "--impl",
   "jax",
   "--tag",
-  "jax-cpu"
+  "jax-cpu",
+  "--suites",
+  "evo1d,evo1d_large",
+  "--merge"
  ],
  "timing": {
   "warmup": 1.0,
@@ -29,5 +32,5 @@
  "env": {
   "JAX_PLATFORMS": "cpu"
  },
- "git_commit": "89d48ae"
+ "git_commit": "ebb9bcc"
 }

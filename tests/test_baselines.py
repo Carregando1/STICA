@@ -95,3 +95,22 @@ def test_parallel_and_batched_variants():
     best, used = B.evolve_lifetime_numba_par(np.asarray(stica.single_cell(15)), np.zeros((20, 15), np.int8), t, 12,
                                              3000, np.arange(4))
     assert best.shape == used.shape == (4,) and np.all((best == 0) <= (used <= 3000))
+
+
+def test_packed_cpu_baseline():
+    pytest.importorskip("numba")
+    tables = np.asarray(stica.rule_tables([4, 146]))
+    for W in (5, 31, 63, 64, 65, 130):
+        ic = np.asarray(stica.single_cell(W))
+        target = 12
+        loss = stica.LifetimeLoss(target)
+        for _ in range(30):
+            ra = (RNG.random((20, W)) < RNG.random()).astype(np.int8)
+            ic_r = (RNG.random(W) < 0.3).astype(np.int8) if _ % 2 else ic
+            assert B.lifetime_loss_packed(ic_r, ra, tables, target) == \
+                float(loss(stica.simulate_rule_array(ic_r, ra, tables)))
+        ra, best, used = B.evolve_lifetime_packed(ic, np.zeros((20, W), np.int8), tables, target, 3000, W)
+        assert best == float(loss(stica.simulate_rule_array(ic, ra, tables)))
+    best, used = B.evolve_lifetime_packed_par(np.asarray(stica.single_cell(31)), np.zeros((20, 31), np.int8), tables,
+                                              12, 3000, np.arange(8))
+    assert best.shape == (8,) and np.all((best == 0) <= (used <= 3000))

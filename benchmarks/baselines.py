@@ -7,6 +7,8 @@ Each is checked against the stica package in tests/test_baselines.py, so all imp
              (a `FunctionCompile`d loop over cells and steps).
 - numba-par: the same loops parallelised with numba's prange over independent runs (batches, evolution) or over
              rows / cells within a step (single trajectories), on all cores (NUMBA_NUM_THREADS).
+- packed:    binary rule arrays bit-packed 64 cells per uint64 word and evaluated with bitwise logic, the CPU
+             counterpart of stica.packed (two rules, radius 1, cyclic lattice); one core or all cores.
 - cellpylib: CellPyLib [Antunes 2021] with a rule callable that receives the cell index and time step; the generic
              way to run an inhomogeneous CA in an existing Python CA library. One Python call per cell and step.
 
@@ -283,3 +285,125 @@ def stica_cellpylib(ic, srt, n):
     padded = np.pad(np.asarray(ic, int), 1)[None]
     out = cpl.evolve2d(padded, timesteps=T + 1, apply_rule=apply_rule, r=1, neighbourhood="Moore")
     return out[:, 1:-1, 1:-1]
+
+
+# ------------------------------------------------------------------------- bit-packed binary rule arrays (uint64)
+
+_packed_cache = {}
+
+
+def _packed():
+    if _packed_cache:
+        return _packed_cache
+    from numba import njit, prange
+    ONE = np.uint64(1)
+
+    @njit(cache=True, inline="always")
+    def step(cur, nxt, sel1, t0m, t1m, W, nw, lastmask):
+        """One step on packed words; returns the OR of the new words (0 once the pattern has died)."""
+        top = np.uint64((W - 1) % 64)
+        alive = np.uint64(0)
+        for w in range(nw):
+            c = cur[w]
+            lin = (cur[w - 1] >> np.uint64(63)) if w > 0 else ((cur[nw - 1] >> top) & ONE)
+            rin = (cur[w + 1] << np.uint64(63)) if w < nw - 1 else ((cur[0] & ONE) << top)
+            L = (c << ONE) | lin
+            R = (c >> ONE) | rin
+            s1 = sel1[w]
+            s0 = ~s1
+            new = np.uint64(0)
+            for code in range(8):
+                m = (L if code & 4 else ~L) & (c if code & 2 else ~c) & (R if code & 1 else ~R)
+                new |= m & ((s1 & t1m[code]) | (s0 & t0m[code]))
+            if w == nw - 1:
+                new &= lastmask
+            nxt[w] = new
+            alive |= new
+        return alive
+
+    @njit(cache=True)
+    def lifetime_loss(ic, masks, t0m, t1m, W, target):
+        T, nw = masks.shape
+        lastmask = np.uint64(0xFFFFFFFFFFFFFFFF) if W % 64 == 0 else (ONE << np.uint64(W % 64)) - ONE
+        cur = ic.copy()
+        nxt = np.empty_like(cur)
+        alive = np.uint64(0)
+        for w in range(nw):
+            alive |= cur[w]
+        if alive == 0:
+            return float(abs(0 - target))
+        for t in range(T):
+            if step(cur, nxt, masks[t], t0m, t1m, W, nw, lastmask) == 0:
+                return float(abs(t + 1 - target))
+            cur, nxt = nxt, cur
+        return np.inf
+
+    @njit(cache=True)
+    def evolve(ic, masks0, t0m, t1m, W, target, iterations, seed):
+        np.random.seed(seed)
+        masks = masks0.copy()
+        T = masks.shape[0]
+        best = lifetime_loss(ic, masks, t0m, t1m, W, target)
+        for it in range(iterations):
+            if best == 0.0:
+                return masks, best, it
+            t, x = np.random.randint(T), np.random.randint(W)
+            bit = ONE << np.uint64(x % 64)
+            masks[t, x // 64] ^= bit                       # two rules: switching = flipping the bit
+            value = lifetime_loss(ic, masks, t0m, t1m, W, target)
+            if value <= best:
+                best = value
+            else:
+                masks[t, x // 64] ^= bit
+        return masks, best, iterations
+
+    @njit(cache=True, parallel=True)
+    def evolve_par(ic, masks0, t0m, t1m, W, target, iterations, seeds):
+        n = seeds.shape[0]
+        best = np.empty(n)
+        used = np.empty(n, np.int64)
+        for r in prange(n):
+            res = evolve(ic, masks0, t0m, t1m, W, target, iterations, seeds[r])
+            best[r] = res[1]
+            used[r] = res[2]
+        return best, used
+
+    _packed_cache.update(lifetime_loss=lifetime_loss, evolve=evolve, evolve_par=evolve_par)
+    return _packed_cache
+
+
+def pack64(cells):
+    """0/1 cells (..., W) -> uint64 words (..., ceil(W / 64))."""
+    cells = np.asarray(cells, np.uint64)
+    W = cells.shape[-1]
+    nw = -(-W // 64)
+    c = np.zeros(cells.shape[:-1] + (nw * 64,), np.uint64)
+    c[..., :W] = cells
+    return np.bitwise_or.reduce(c.reshape(cells.shape[:-1] + (nw, 64)) << np.arange(64, dtype=np.uint64), axis=-1)
+
+
+def _packed_args(ic, ra, tables):
+    tables = np.asarray(tables)
+    if tables.shape != (2, 8):
+        raise ValueError("the packed CPU baseline handles two radius-1 rules")
+    full = lambda t: np.where(np.asarray(t) == 1, np.uint64(0xFFFFFFFFFFFFFFFF), np.uint64(0))
+    return pack64(ic), pack64(ra), full(tables[0]), full(tables[1]), np.asarray(ic).shape[-1]
+
+
+def lifetime_loss_packed(ic, ra, tables, target):
+    ic_w, masks, t0, t1, W = _packed_args(ic, ra, tables)
+    return _packed()["lifetime_loss"](ic_w, masks, t0, t1, W, float(target))
+
+
+def evolve_lifetime_packed(ic, ra0, tables, target, iterations, seed):
+    """Single run (as evolve_lifetime_numba). Returns the rule array as 0/1 cells, its loss and the mutations used."""
+    ic_w, masks, t0, t1, W = _packed_args(ic, ra0, tables)
+    masks, best, used = _packed()["evolve"](ic_w, masks, t0, t1, W, float(target), int(iterations), int(seed))
+    ra = ((masks[..., None] >> np.arange(64, dtype=np.uint64)) & np.uint64(1)).reshape(masks.shape[0], -1)[:, :W]
+    return ra.astype(np.int8), best, used
+
+
+def evolve_lifetime_packed_par(ic, ra0, tables, target, iterations, seeds):
+    ic_w, masks, t0, t1, W = _packed_args(ic, ra0, tables)
+    return _packed()["evolve_par"](ic_w, masks, t0, t1, W, float(target), int(iterations),
+                                   np.asarray(seeds, np.int64))

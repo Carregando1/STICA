@@ -1,12 +1,15 @@
 {
  "impl": "jax",
  "tag": "jax-gpu",
- "date": "2026-11-12T16:17:34",
+ "date": "2026-11-12T18:33:00",
  "python": "3.13.5",
  "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
  "argv": [
   "--impl",
-  "jax"
+  "jax",
+  "--suites",
+  "evo1d,evo1d_large",
+  "--merge"
  ],
  "timing": {
   "warmup": 1.0,
@@ -25,5 +28,5 @@
  "device": "NVIDIA RTX 4000 Ada Generation",
  "platform_jax": "gpu",
  "env": {},
- "git_commit": "89d48ae"
+ "git_commit": "ebb9bcc"
 }

@@ -18,6 +18,6 @@ for impl in numba numba-par numpy cellpylib; do
 done
 run python benchmarks/bench.py --impl stica
 run python benchmarks/bench.py --impl legacy
-run python reproduce/wolfram_lifetime.py --runs 4096 --chunk 4096 --scale-runs 64
+run python reproduce/wolfram_lifetime.py --runs 4096 --chunk 4096
 python benchmarks/plot_scaling.py benchmarks/results/scaling_*.csv > benchmarks/results/scaling_tables.md
 python benchmarks/summarize.py benchmarks/results/stica.csv benchmarks/results/legacy.csv > benchmarks/results/legacy_tables.md
