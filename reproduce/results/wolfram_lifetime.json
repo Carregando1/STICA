@@ -1,0 +1,163 @@
+{
+ "metadata": {
+  "date": "2026-11-12T16:40:56",
+  "python": "3.13.5",
+  "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "jax": "0.6.2",
+  "stica": "0.1.0",
+  "device": "NVIDIA RTX 4000 Ada Generation",
+  "git_commit": "89d48ae"
+ },
+ "published": {
+  "arrays": 12,
+  "cells_compared": 24180,
+  "cells_mismatched": 0,
+  "lifetimes": [
+   50,
+   50,
+   50,
+   50,
+   50,
+   50,
+   50,
+   50,
+   50,
+   50,
+   50,
+   50
+  ],
+  "source": "https://content.wolfram.com/sites/43/2024/08/sw08202024arraysBimg5.png"
+ },
+ "rerun": {
+  "rules_4_146": {
+   "setup": {
+    "rules": [
+     4,
+     146
+    ],
+    "radius": 1,
+    "height": 64,
+    "width": 31,
+    "target": 50,
+    "iterations": 10000
+   },
+   "label": "rules 4/146, 64x31, lifetime 50",
+   "runs": 4096,
+   "solved_fraction": 0.999267578125,
+   "mutations_to_solution": {
+    "median": 1992.0,
+    "q25": 1108.0,
+    "q75": 2921.0,
+    "min": 1,
+    "max": 9455,
+    "mean": 2145.678475445883
+   },
+   "kept_mutations_to_solution": {
+    "median": 1895.0,
+    "q25": 1049.0,
+    "q75": 2784.0
+   },
+   "kept_fraction_median": 0.9451788491446346,
+   "cells_changed_from_start": {
+    "median": 818.0
+   },
+   "timing": {
+    "compile_seconds": 2.5058149248361588,
+    "run_seconds": 2.272711643949151,
+    "runs_per_second": 1802.2523934812218,
+    "candidate_evaluations_per_second": 18022523.934812218,
+    "cell_updates_per_second": 35756687486.66744,
+    "note": "every run executes the full iteration budget; runs that reach zero loss stop changing"
+   },
+   "wolfram_reported": null
+  },
+  "and_xor": {
+   "setup": {
+    "rules": [
+     8,
+     6
+    ],
+    "radius": 0.5,
+    "height": 40,
+    "width": 21,
+    "target": 30,
+    "iterations": 10000
+   },
+   "label": "And/Xor, 40x21, lifetime 30",
+   "runs": 4096,
+   "solved_fraction": 1.0,
+   "mutations_to_solution": {
+    "median": 1830.5,
+    "q25": 1418.0,
+    "q75": 2400.0,
+    "min": 558,
+    "max": 7442,
+    "mean": 1999.913818359375
+   },
+   "kept_mutations_to_solution": {
+    "median": 1785.0,
+    "q25": 1383.75,
+    "q75": 2319.25
+   },
+   "kept_fraction_median": 0.9721428046300002,
+   "cells_changed_from_start": {
+    "median": 414.0
+   },
+   "timing": {
+    "compile_seconds": 3.393582226941362,
+    "run_seconds": 1.5945613789372146,
+    "runs_per_second": 2568.731473184187,
+    "candidate_evaluations_per_second": 25687314.73184187,
+    "cell_updates_per_second": 21577344374.74717,
+    "note": "every run executes the full iteration budget; runs that reach zero loss stop changing"
+   },
+   "wolfram_reported": "one run shown: 1705 mutations, 'only 780 of them actually contribute to generating the final rule array; all the others are discarded along the way' (the counting is not specified)"
+  }
+ },
+ "scale": {
+  "setup": {
+   "rules": [
+    4,
+    146
+   ],
+   "radius": 1,
+   "height": 640,
+   "width": 311,
+   "target": 500,
+   "iterations": 100000
+  },
+  "label": "rules 4/146, 640x311, lifetime 500",
+  "runs": 64,
+  "solved_fraction": 0.0625,
+  "mutations_to_solution": {
+   "median": 80994.0,
+   "q25": 54675.75,
+   "q75": 90949.75,
+   "min": 1182,
+   "max": 95356,
+   "mean": 64631.5
+  },
+  "kept_mutations_to_solution": {
+   "median": 80392.0,
+   "q25": 54236.5,
+   "q75": 90304.25
+  },
+  "kept_fraction_median": 0.9922548686972208,
+  "cells_changed_from_start": {
+   "median": 54927.0
+  },
+  "timing": {
+   "compile_seconds": 2.946795185096562,
+   "run_seconds": 127.18893867894076,
+   "runs_per_second": 0.503188411388142,
+   "candidate_evaluations_per_second": 50318.84113881419,
+   "cell_updates_per_second": 10015462140.269577,
+   "note": "every run executes the full iteration budget; runs that reach zero loss stop changing"
+  },
+  "wolfram_reported": null,
+  "final_loss": {
+   "median": 98.5,
+   "min": 0.0
+  }
+ }
+}
