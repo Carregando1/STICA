@@ -18,6 +18,7 @@ rules along it: (T, H, W, R) is full STICA, (T, 1, 1, R) varies rules only in ti
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -31,6 +32,12 @@ from jax import Array
 from .rules import neighbor_counts, rule_index, validate_srt
 
 CELL, TIME = 0, 1
+
+# Steps per iteration of the compiled time loop. On a GPU every loop iteration has a fixed cost (tens of
+# microseconds) that dwarfs the work of one small CA step, so the loop body runs several steps at once. Every step
+# ends in an optimization barrier: without it XLA fuses consecutive unrolled stencil steps into each other, which
+# grows exponentially and stalls compilation when a whole run fits in one unrolled block (T <= SCAN_UNROLL).
+SCAN_UNROLL = 16
 
 # state 0 is white; further states cycle through this palette when rendering
 _PALETTE = np.array(
@@ -82,10 +89,10 @@ def rollout(ic: Array, srt: Array, n: int, num_steps: int | None = None, t0: int
     s0 = initial_state(ic, t0)
 
     def body(state, _):
-        state = stica_step(state, srt, n)
+        state = jax.lax.optimization_barrier(stica_step(state, srt, n))
         return state, state[..., CELL]
 
-    _, cells = jax.lax.scan(body, s0, None, length=num_steps)
+    _, cells = jax.lax.scan(body, s0, None, length=num_steps, unroll=SCAN_UNROLL)
     return jnp.concatenate([s0[None, ..., CELL], cells], axis=0)
 
 
@@ -121,6 +128,21 @@ def _cell_channel(next_state, state, perception, input):
     return next_state[..., CELL]
 
 
+@partial(jax.jit, static_argnames=("graphdef", "num_steps"))
+def _run_module(graphdef, params, s0, num_steps):
+    """Cell trajectory of a CAX module from its split (graphdef, state). Unlike nnx.jit, plain jax.jit does not
+    return (and so copy) the module's state, which for a large SRT costs more than the simulation itself."""
+    ca = nnx.merge(graphdef, params)
+
+    def step(state, _):
+        perception = ca.perceive(state)
+        next_state = jax.lax.optimization_barrier(ca.update(state, perception, None))
+        return next_state, ca.metrics_fn(next_state, state, perception, None)
+
+    _, cells = jax.lax.scan(step, s0, None, length=num_steps, unroll=SCAN_UNROLL)
+    return jnp.concatenate([s0[None, ..., CELL], cells], axis=0)
+
+
 class STICA(CA):
     """Spacetime-inhomogeneous cellular automaton as a CAX `CA`.
 
@@ -134,6 +156,24 @@ class STICA(CA):
         validate_srt(srt, num_states, check_values=check_values)
         super().__init__(STICAPerceive(num_states), STICAUpdate(srt, num_states), metrics_fn=metrics_fn)
         self.num_states = num_states
+
+    @partial(nnx.jit, static_argnames=("num_steps", "input_in_axis"))
+    def __call__(self, state, input=None, *, num_steps: int = 1, input_in_axis: int | None = None):
+        """Run `num_steps` steps; returns the final state and the per-step metrics, exactly like `CA.__call__`.
+
+        CAX's loop (`nnx.scan` over the whole module) carries the module, and with it the rule tensor, from step to
+        step; for large SRTs that costs far more than the CA update itself. Here the module is a loop constant and
+        the loop is unrolled SCAN_UNROLL steps per iteration. Perceive, update and metrics are CAX's."""
+        def step(state, inp):
+            perception = self.perceive(state)
+            next_state = jax.lax.optimization_barrier(self.update(state, perception, inp))
+            return next_state, self.metrics_fn(next_state, state, perception, inp)
+
+        if input is not None and input_in_axis is not None:
+            xs, body = jnp.moveaxis(input, input_in_axis, 0), step
+        else:
+            xs, body = None, (lambda s, _: step(s, input))
+        return jax.lax.scan(body, state, xs, length=num_steps, unroll=SCAN_UNROLL)
 
     @property
     def srt(self) -> Array:
@@ -154,8 +194,8 @@ class STICA(CA):
         s0 = initial_state(ic, t0)
         if num_steps == 0:
             return s0[None, ..., CELL]
-        _, cells = self(s0, num_steps=num_steps)
-        return jnp.concatenate([s0[None, ..., CELL], cells], axis=0)
+        graphdef, params = nnx.split(self)
+        return _run_module(graphdef, params, s0, num_steps)
 
     def render(self, state: Array) -> Array:
         """RGB uint8 image (H, W, 3) of an augmented state (H, W, 2) or a cell array (H, W)."""
