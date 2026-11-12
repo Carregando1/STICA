@@ -1,7 +1,7 @@
 """Reproduce Wolfram's lifetime experiments with rule arrays, then scale one up.
 
     python reproduce/wolfram_lifetime.py                  # all parts
-    python reproduce/wolfram_lifetime.py --runs 4096 --scale-runs 128
+    python reproduce/wolfram_lifetime.py --runs 4096 --scale-runs 8192
 
 Parts
 1. Published solutions. The 12 lifetime-50 rule arrays shown in the essay (read off its figure by
@@ -13,7 +13,8 @@ Parts
    mutation, keeps mutations that do not increase the loss (|lifetime - target|, infinite if the pattern outlives
    the array), and stops at zero loss or after 10,000 mutations. Wolfram's seeds drive Mathematica's generator, so
    single runs cannot be matched; the comparison is with the distribution of outcomes.
-3. Scale-up: the rules-4/146 task on a rule array 10x taller and 10x wider (100x the cells), as a demonstration.
+3. Scale-up: the rules-4/146 task on a rule array 10x taller and 10x wider (100x the cells), as a demonstration,
+   run on bit-packed rule arrays (stica.evolve_packed_batch).
 
 Writes reproduce/results/wolfram_lifetime.json (statistics, timings, hardware) and wolfram_lifetime.png.
 """
@@ -93,10 +94,26 @@ def evolve(setup: dict, runs: int, seed: int, chunk: int):
     return res, compile_s, run_s
 
 
+def evolve_packed(setup: dict, runs: int, seed: int):
+    """The same evolution on bit-packed rule arrays (stica.evolve_packed_batch; on a GPU, one fused kernel per
+    candidate evaluation for all runs). No per-iteration trace is kept, so there are no kept-mutation statistics.
+    The single timed call includes compilation (a few seconds)."""
+    from stica import evolve_packed_batch
+    t0 = time.perf_counter()
+    res = evolve_packed_batch(jax.random.PRNGKey(seed), runs, single_cell(setup["width"]),
+                              np.zeros((setup["height"], setup["width"]), np.int8), setup["rules"],
+                              objective=LifetimeLoss(setup["target"]), iterations=setup["iterations"],
+                              radius=setup["radius"], stop_at=0.0)
+    res = jax.tree.map(np.asarray, jax.block_until_ready(res))
+    return res, 0.0, time.perf_counter() - t0
+
+
 def summarize(name: str, setup: dict, res, compile_s: float, run_s: float) -> dict:
     solved = res.solved_at > 0
     s = res.solved_at[solved]
-    kept = np.array([res.accepted[i, :res.solved_at[i]].sum() for i in np.flatnonzero(solved)])
+    accepted = getattr(res, "accepted", None)
+    kept = np.array([accepted[i, :res.solved_at[i]].sum() for i in np.flatnonzero(solved)]) \
+        if accepted is not None else np.array([])
     runs, iters = len(res.best), setup["iterations"]
     q = lambda a, p: float(np.percentile(a, p)) if len(a) else None
     return dict(
@@ -105,7 +122,7 @@ def summarize(name: str, setup: dict, res, compile_s: float, run_s: float) -> di
         mutations_to_solution=dict(median=q(s, 50), q25=q(s, 25), q75=q(s, 75), min=int(s.min()) if len(s) else None,
                                    max=int(s.max()) if len(s) else None, mean=float(s.mean()) if len(s) else None),
         kept_mutations_to_solution=dict(median=q(kept, 50), q25=q(kept, 25), q75=q(kept, 75)),
-        kept_fraction_median=q(kept / s, 50) if len(s) else None,
+        kept_fraction_median=q(kept / s, 50) if len(kept) else None,
         cells_changed_from_start=dict(median=q((res.ra[solved] != 0).sum((1, 2)), 50)),
         timing=dict(compile_seconds=compile_s, run_seconds=run_s, runs_per_second=runs / run_s,
                     candidate_evaluations_per_second=runs * iters / run_s,
@@ -202,7 +219,7 @@ def main():
     ap.add_argument("--runs", type=int, default=1024, help="independent runs per Wolfram setup")
     ap.add_argument("--chunk", type=int, default=1024, help="runs evolved in parallel per call")
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--scale-runs", type=int, default=64)
+    ap.add_argument("--scale-runs", type=int, default=4096)
     ap.add_argument("--scale-height", type=int, default=640)
     ap.add_argument("--scale-width", type=int, default=311)
     ap.add_argument("--scale-target", type=int, default=500)
@@ -233,15 +250,17 @@ def main():
         setup = dict(SETUPS["rules_4_146"], height=args.scale_height, width=args.scale_width,
                      target=args.scale_target, iterations=args.scale_iterations,
                      label=f"rules 4/146, {args.scale_height}x{args.scale_width}, lifetime {args.scale_target}")
-        res, c, r = evolve(setup, args.scale_runs, args.seed + 1, args.scale_runs)
+        res, c, r = evolve_packed(setup, args.scale_runs, args.seed + 1)
         results["scale"] = summarize("scale", setup, res, c, r)
+        results["scale"]["engine"] = "stica.evolve_packed_batch (bit-packed; fused GPU kernel when on a GPU)"
+        results["scale"]["timing"]["note"] = "one call for all runs, including compilation"
         results["scale"]["final_loss"] = dict(median=float(np.median(res.best)), min=float(res.best.min()))
         best = int(np.argmin(np.where(np.isfinite(res.best), res.best, np.inf)))
         examples["scale"] = dict(solution=res.ra[best])
         s = results["scale"]
         print(f"3. {s['label']}: {s['solved_fraction']:.1%} of {s['runs']} runs solved within "
               f"{setup['iterations']} mutations; median final loss {s['final_loss']['median']}; {r:.1f} s "
-              f"(+{c:.1f} s compile)", flush=True)
+              f"including compilation", flush=True)
 
     (OUT / "wolfram_lifetime.json").write_text(json.dumps(results, indent=1) + "\n")
     make_figure(results, examples, OUT / "wolfram_lifetime.png")

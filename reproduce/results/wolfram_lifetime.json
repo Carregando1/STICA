@@ -1,12 +1,12 @@
 {
  "metadata": {
-  "date": "2026-11-12T16:40:56",
+  "date": "2026-11-12T18:42:53",
   "python": "3.13.5",
   "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
   "jax": "0.6.2",
   "stica": "0.1.0",
   "device": "NVIDIA RTX 4000 Ada Generation",
-  "git_commit": "89d48ae"
+  "git_commit": "ebb9bcc"
  },
  "published": {
   "arrays": 12,
@@ -62,11 +62,11 @@
     "median": 818.0
    },
    "timing": {
-    "compile_seconds": 2.5058149248361588,
-    "run_seconds": 2.272711643949151,
-    "runs_per_second": 1802.2523934812218,
-    "candidate_evaluations_per_second": 18022523.934812218,
-    "cell_updates_per_second": 35756687486.66744,
+    "compile_seconds": 2.594653642969206,
+    "run_seconds": 2.2859237471129745,
+    "runs_per_second": 1791.8357973108577,
+    "candidate_evaluations_per_second": 17918357.973108575,
+    "cell_updates_per_second": 35550022218.647415,
     "note": "every run executes the full iteration budget; runs that reach zero loss stop changing"
    },
    "wolfram_reported": null
@@ -104,11 +104,11 @@
     "median": 414.0
    },
    "timing": {
-    "compile_seconds": 3.393582226941362,
-    "run_seconds": 1.5945613789372146,
-    "runs_per_second": 2568.731473184187,
-    "candidate_evaluations_per_second": 25687314.73184187,
-    "cell_updates_per_second": 21577344374.74717,
+    "compile_seconds": 3.441627813037485,
+    "run_seconds": 1.5625199971254915,
+    "runs_per_second": 2621.4064508199926,
+    "candidate_evaluations_per_second": 26214064.508199926,
+    "cell_updates_per_second": 22019814186.88794,
     "note": "every run executes the full iteration budget; runs that reach zero loss stop changing"
    },
    "wolfram_reported": "one run shown: 1705 mutations, 'only 780 of them actually contribute to generating the final rule array; all the others are discarded along the way' (the counting is not specified)"
@@ -127,36 +127,37 @@
    "iterations": 100000
   },
   "label": "rules 4/146, 640x311, lifetime 500",
-  "runs": 64,
-  "solved_fraction": 0.0625,
+  "runs": 4096,
+  "solved_fraction": 0.0634765625,
   "mutations_to_solution": {
-   "median": 80994.0,
-   "q25": 54675.75,
-   "q75": 90949.75,
-   "min": 1182,
-   "max": 95356,
-   "mean": 64631.5
+   "median": 48455.5,
+   "q25": 22038.25,
+   "q75": 75644.25,
+   "min": 25,
+   "max": 98953,
+   "mean": 48244.78461538462
   },
   "kept_mutations_to_solution": {
-   "median": 80392.0,
-   "q25": 54236.5,
-   "q75": 90304.25
+   "median": null,
+   "q25": null,
+   "q75": null
   },
-  "kept_fraction_median": 0.9922548686972208,
+  "kept_fraction_median": null,
   "cells_changed_from_start": {
-   "median": 54927.0
+   "median": 38180.0
   },
   "timing": {
-   "compile_seconds": 2.946795185096562,
-   "run_seconds": 127.18893867894076,
-   "runs_per_second": 0.503188411388142,
-   "candidate_evaluations_per_second": 50318.84113881419,
-   "cell_updates_per_second": 10015462140.269577,
-   "note": "every run executes the full iteration budget; runs that reach zero loss stop changing"
+   "compile_seconds": 0.0,
+   "run_seconds": 188.47609627107158,
+   "runs_per_second": 21.73219883602119,
+   "candidate_evaluations_per_second": 2173219.883602119,
+   "cell_updates_per_second": 432557685632.16583,
+   "note": "one call for all runs, including compilation"
   },
   "wolfram_reported": null,
+  "engine": "stica.evolve_packed_batch (bit-packed; fused GPU kernel when on a GPU)",
   "final_loss": {
-   "median": 98.5,
+   "median": 163.0,
    "min": 0.0
   }
  }
