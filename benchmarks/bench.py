@@ -1,8 +1,9 @@
 """Runtime benchmarks for STICA simulation and optimisation.
 
 Methodology: wall time with time.perf_counter (monotonic); the first call of every condition (JIT compilation) is
-run separately and not recorded; device work is synchronised with block_until_ready() before the clock stops; every
-repetition is written to CSV (no filtering), together with a JSON file describing software and hardware.
+run separately and not recorded, followed by about a second of untimed calls so clocks settle; each repetition times
+a loop of calls lasting at least 0.2 s; device work is synchronised with block_until_ready() before the clock stops;
+every repetition is written to CSV (no filtering), together with a JSON file describing software and hardware.
 
     python benchmarks/bench.py --impl stica
     python benchmarks/bench.py --impl legacy        # original implementation, for comparison
@@ -30,13 +31,24 @@ SIM_CONDITIONS = [(32, 200, 2), (64, 500, 2), (100, 1000, 2), (64, 200, 3), (64,
 GA_GRIDS = [32, 64, 100]   # n = 2, steps = grid - 1, ic_count = grid, srt_count = grid^2 (as in the legacy notebooks)
 
 
-def timed(fn, reps):
-    fn()                                   # warm-up / compile, not recorded
+def timed(fn, reps, warmup=1.0, min_rep=0.2):
+    """Per-call seconds of `reps` repetitions. The first call (compilation) is not recorded; calls continue for
+    `warmup` seconds so clocks settle; each repetition loops enough calls to last at least `min_rep` seconds."""
+    t0 = time.perf_counter()
+    fn()
+    if time.perf_counter() - t0 < warmup:
+        end = time.perf_counter() + warmup
+        while time.perf_counter() < end:
+            fn()
+    t0 = time.perf_counter()
+    fn()
+    calls = max(1, int(np.ceil(min_rep / max(time.perf_counter() - t0, 1e-7))))
     out = []
     for _ in range(reps):
         t0 = time.perf_counter()
-        fn()
-        out.append(time.perf_counter() - t0)
+        for _ in range(calls):
+            fn()
+        out.append((time.perf_counter() - t0) / calls)
     return out
 
 

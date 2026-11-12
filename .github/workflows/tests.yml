@@ -20,7 +20,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Install
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,bench]"
       - name: Test (CPU)
         env:
           JAX_PLATFORMS: cpu

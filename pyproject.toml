@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "stica"
 version = "0.1.0"
-description = "Spacetime-inhomogeneous cellular automata (STICA) in JAX/CAX, with on-device evolutionary optimisation"
+description = "Spacetime-inhomogeneous cellular automata and Wolfram rule arrays in JAX/CAX, with on-device evolutionary optimisation"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -21,6 +21,8 @@ dependencies = [
 [project.optional-dependencies]
 cuda12 = ["jax[cuda12]>=0.6,<0.7"]
 dev = ["pytest>=8"]
+# CPU baselines, figures and the figure extraction used by benchmarks/ and reproduce/
+bench = ["numba>=0.60", "cellpylib>=2.4", "matplotlib>=3.8", "pillow>=10"]
 
 [project.urls]
 Repository = "https://github.com/Carregando1/STICA"

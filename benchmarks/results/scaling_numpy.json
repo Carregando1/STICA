@@ -1,0 +1,27 @@
+{
+ "impl": "numpy",
+ "tag": "numpy",
+ "date": "2026-11-12T16:40:55",
+ "python": "3.13.5",
+ "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+ "argv": [
+  "--impl",
+  "numpy"
+ ],
+ "timing": {
+  "warmup": 1.0,
+  "min_rep": 0.2,
+  "reps": 7,
+  "max_call": 20.0
+ },
+ "cpu": "Intel(R) Xeon(R) w5-2445",
+ "logical_cpus": 20,
+ "jax": "0.6.2",
+ "jaxlib": "0.6.2",
+ "numpy": "2.3.1",
+ "numba": "0.68.1",
+ "cellpylib": "2.4.0",
+ "stica": "0.1.0",
+ "env": {},
+ "git_commit": "89d48ae"
+}
