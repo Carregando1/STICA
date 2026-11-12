@@ -119,35 +119,54 @@ def _mutate(k_pos: Array, k_val: Array, arr: Array, count: int, states: int):
 
 
 def _hill_climb(key, ic, params, aux, *, loss_fn, ic_states, param_states, iterations, ic_count, param_count,
-                record, accept_ties, stop_at):
+                record, accept_ties, stop_at, restart=False):
     """Generic (1+1) loop over an initial condition `ic` and a rule array `params` (both mutable, integer-valued),
     with `aux` passed through unchanged. `loss_fn(ic, params, aux)` must be a hashable callable (it is a static
-    argument of the jitted loop). Once the best loss is <= `stop_at`, no further candidate is accepted."""
+    argument of the jitted loop).
+
+    With `stop_at`, a run is solved once its best loss is <= stop_at. Without `restart` it then stops changing. With
+    `restart`, it counts the solution and starts a fresh run from the initial ic and params, so the iteration budget
+    keeps producing solutions (one extra pass over ic and params per iteration). The best-loss trace records the
+    value before the restart, so solutions show up in it as values <= stop_at.
+
+    Returns (ic, params, best, best0, accepted, trace, mutations, solves, solve_steps): `solves` counts solutions
+    and `solve_steps` sums the iterations each one took."""
     best0 = loss_fn(ic, params, aux).astype(jnp.float32)
+    ic0, params0 = ic, params
+    if restart and stop_at is None:
+        raise ValueError("restart needs stop_at")
 
     def iterate(carry, key):
-        ic, params, best = carry
+        ic, params, best, steps, solves, solve_steps = carry
         k_ic, k_icv, k_p, k_pv = jax.random.split(key, 4)
         ic_c, ic_pos, ic_old, ic_new = _mutate(k_ic, k_icv, ic, ic_count, ic_states)
         p_c, p_pos, p_old, p_new = _mutate(k_p, k_pv, params, param_count, param_states)
         value = loss_fn(ic_c, p_c, aux).astype(jnp.float32)
         accept = (value <= best) if accept_ties else (value < best)
-        if stop_at is not None:
+        if stop_at is not None and not restart:
             accept = accept & (best > stop_at)
         # keep or revert only the touched entries: O(count) work and vmap-friendly
         ic = ic_c.at[tuple(ic_pos.T)].set(jnp.where(accept, ic_new, ic_old))
         params = p_c.at[tuple(p_pos.T)].set(jnp.where(accept, p_new, p_old))
         best = jnp.where(accept, value, best)
+        steps = steps + 1
         out = (accept, best, Mutations(ic_pos, ic_old, ic_new, p_pos, p_old, p_new) if record else None)
-        return (ic, params, best), out
+        if restart:
+            solved = best <= stop_at
+            solves = solves + solved
+            solve_steps = solve_steps + jnp.where(solved, steps, 0)
+            ic, params = jnp.where(solved, ic0, ic), jnp.where(solved, params0, params)
+            best, steps = jnp.where(solved, best0, best), jnp.where(solved, 0, steps)
+        return (ic, params, best, steps, solves, solve_steps), out
 
-    (ic, params, best), (accepted, trace, muts) = jax.lax.scan(iterate, (ic, params, best0),
-                                                               jax.random.split(key, iterations))
-    return ic, params, best, best0, accepted, trace, muts
+    zero = jnp.zeros((), jnp.int32)
+    (ic, params, best, _, solves, solve_steps), (accepted, trace, muts) = jax.lax.scan(
+        iterate, (ic, params, best0, zero, zero, zero), jax.random.split(key, iterations))
+    return ic, params, best, best0, accepted, trace, muts, solves, solve_steps
 
 
 _STATIC = ("loss_fn", "ic_states", "param_states", "iterations", "ic_count", "param_count", "record", "accept_ties",
-           "stop_at")
+           "stop_at", "restart")
 hill_climb = jax.jit(_hill_climb, static_argnames=_STATIC)
 
 
@@ -191,7 +210,7 @@ def run_ga(key: Array, ic: Array, srt: Array, *, n: int, iterations: int, ic_cou
     With `stop_at`, the search stops changing the pair once the objective is <= stop_at."""
     ic, srt = jnp.asarray(ic, jnp.int8), jnp.asarray(srt, jnp.int8)
     _check_counts(ic.shape, srt.shape, ic_count, srt_count)
-    ic, srt, best, _, accepted, trace, muts = hill_climb(
+    ic, srt, best, _, accepted, trace, muts, _, _ = hill_climb(
         key, ic, srt, None, loss_fn=_STICALoss(n, num_steps, get_objective(objective)), ic_states=n, param_states=n,
         iterations=iterations, ic_count=ic_count, param_count=srt_count, record=record_mutations,
         accept_ties=accept_ties, stop_at=stop_at)
@@ -209,7 +228,7 @@ def run_ga_batch(key: Array, num_runs: int, *, grid_size: int, n: int, iteration
     ics, srts = jax.vmap(lambda k: init_state(k, grid_size, n, inhomogeneity=inhomogeneity, steps=steps,
                                               state_probs=state_probs))(jax.random.split(k_init, num_runs))
     _check_counts(ics.shape[1:], srts.shape[1:], ic_count, srt_count)
-    ic, srt, best, _, accepted, trace, muts = hill_climb_batch(
+    ic, srt, best, _, accepted, trace, muts, _, _ = hill_climb_batch(
         jax.random.split(k_run, num_runs), ics, srts, None,
         loss_fn=_STICALoss(n, steps, get_objective(objective)), ic_states=n, param_states=n, iterations=iterations,
         ic_count=ic_count, param_count=srt_count, record=record_mutations, accept_ties=accept_ties, stop_at=stop_at)

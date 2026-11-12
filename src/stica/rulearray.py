@@ -222,6 +222,7 @@ def lifetime(traj: Array) -> Array:
 class LifetimeLoss:
     """|lifetime - target|, or +inf if the pattern outlives the rule array (Wolfram's LifetimeLossValue)."""
     target: int
+    rows_only = True    # depends only on which rows are non-empty (lets the packed GPU kernel skip the cells)
 
     def __call__(self, traj: Array) -> Array:
         life = lifetime(traj)
@@ -238,6 +239,8 @@ class RuleArrayResult(NamedTuple):
     best_trace: Array     # (iters,) best loss after each iteration
     solved_at: Array      # mutations until the loss first reached stop_at (0: at the start, -1: never or no stop_at)
     mutations: Mutations | None
+    solves: Array         # solutions found (restart=True; otherwise 1 if solved, else 0)
+    solve_steps: Array    # total mutations those solutions took
 
 
 @dataclasses.dataclass(frozen=True)
@@ -269,28 +272,34 @@ def _evolve_args(ic, ra, rules, *, objective, k, radius, neighborhood, boundary,
                                 param_count=mutations)
 
 
-def _result(out, stop_at) -> RuleArrayResult:
-    _, ra, best, best0, accepted, trace, muts = out
+def _result(out, stop_at, restart=False) -> RuleArrayResult:
+    _, ra, best, best0, accepted, trace, muts, solves, solve_steps = out
     solved = steps_to_target(best0, trace, stop_at) if stop_at is not None else jnp.full_like(best0, -1, jnp.int32)
-    return RuleArrayResult(ra, best, best0, accepted, trace, solved, muts)
+    if not restart:
+        solves = (solved > 0).astype(jnp.int32)
+        solve_steps = jnp.maximum(solved, 0)
+    return RuleArrayResult(ra, best, best0, accepted, trace, solved, muts, solves, solve_steps)
 
 
 def evolve_rule_array(key: Array, ic, ra, rules, *, objective: Callable, iterations: int, k: int = 2,
                       radius: float = 1, neighborhood: str = "alternating", boundary: str = "periodic",
                       num_steps: int | None = None, mutations: int = 1, accept_ties: bool = True,
-                      stop_at: float | None = None, record_mutations: bool = False) -> RuleArrayResult:
+                      stop_at: float | None = None, restart: bool = False,
+                      record_mutations: bool = False) -> RuleArrayResult:
     """Adaptive evolution of a rule array (Wolfram's procedure). Each iteration switches the rule of `mutations`
     distinct cells to a uniformly chosen different rule from `rules` and keeps the candidate if `objective`
     (trajectory -> scalar, minimised) does not increase (`accept_ties=False`: only if it decreases). With `stop_at`,
-    the array stops changing once the loss is <= stop_at, as Wolfram's runs stop at zero loss. The initial condition
+    the array stops changing once the loss is <= stop_at, as Wolfram's runs stop at zero loss; with `restart` as well,
+    every solution is counted and a fresh run starts from `ra`, so the whole budget produces solutions (`ra` in the
+    result is then the run in progress). The initial condition
     is fixed. `objective` must be hashable and stable (a module-level function or a frozen dataclass such as
     `LifetimeLoss`), because it is a static argument of the compiled loop."""
     ic, ra, tables, static = _evolve_args(ic, ra, rules, objective=objective, k=k, radius=radius,
                                           neighborhood=neighborhood, boundary=boundary, num_steps=num_steps,
                                           mutations=mutations)
     out = hill_climb(key, ic, ra, tables, iterations=iterations, record=record_mutations, accept_ties=accept_ties,
-                     stop_at=stop_at, **static)
-    return _result(out, stop_at)
+                     stop_at=stop_at, restart=restart, **static)
+    return _result(out, stop_at, restart)
 
 
 def evolve_rule_array_batch(key: Array, num_runs: int, ic, ra, rules, **kwargs) -> RuleArrayResult:
@@ -298,11 +307,12 @@ def evolve_rule_array_batch(key: Array, num_runs: int, ic, ra, rules, **kwargs) 
     Takes the keyword arguments of `evolve_rule_array`; every field of the result gains a leading run axis."""
     iterations, record = kwargs.pop("iterations"), kwargs.pop("record_mutations", False)
     accept_ties, stop_at = kwargs.pop("accept_ties", True), kwargs.pop("stop_at", None)
+    restart = kwargs.pop("restart", False)
     ic, ra, tables, static = _evolve_args(ic, ra, rules, **{"k": 2, "radius": 1, "neighborhood": "alternating",
                                                              "boundary": "periodic", "num_steps": None,
                                                              "mutations": 1, **kwargs})
     ics = jnp.broadcast_to(ic, (num_runs,) + ic.shape)
     ras = jnp.broadcast_to(ra, (num_runs,) + ra.shape)
     out = hill_climb_batch(jax.random.split(key, num_runs), ics, ras, tables, iterations=iterations, record=record,
-                           accept_ties=accept_ties, stop_at=stop_at, **static)
-    return _result(out, stop_at)
+                           accept_ties=accept_ties, stop_at=stop_at, restart=restart, **static)
+    return _result(out, stop_at, restart)
