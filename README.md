@@ -5,16 +5,19 @@ introduced this model as *rule arrays*, "'spacetime-inhomogeneous' generalizatio
 minimal models of machine learning [1]. Wolfram's rule arrays are one-dimensional and binary, and each cell chooses
 between two fixed rules.
 
-This package generalises them and runs them on accelerators:
+This package implements Wolfram's rule arrays exactly, generalises them, and runs both on accelerators:
 
-- **2D** lattices with the Moore neighbourhood and **N states**.
-- A **full outer-totalistic lookup table per cell and time step**: the rule sees the cell's own state and how many
-  neighbours are in each state.
-- **Rule sharing**: the rule tensor can be shared across time, across space, or both. Sharing across both gives an
-  ordinary homogeneous CA.
+- **Wolfram's rule arrays (1D)**: rule numbers as in `CellularAutomaton`, k colours, radius r or 1/2 ("brick"
+  lattices), a finite rule set or a full rule table per cell. The simulator reproduces, cell for cell, all 12 evolved
+  rule arrays published in [1].
+- **2D** lattices with the Moore neighbourhood and **N states**, with a **full outer-totalistic lookup table per cell
+  and time step**: the rule sees the cell's own state and how many neighbours are in each state.
+- **Rule sharing**: in both models the rules can be shared across time, across space, or both. Sharing across both
+  gives an ordinary homogeneous CA.
 - A **CAX model** [2] in which time is carried in a state channel, so STICA is an ordinary autonomous CA.
-- **Adaptive evolution** of initial conditions and rules (random mutations, kept unless the objective gets worse),
-  running entirely on the GPU and batched over independent runs.
+- **Adaptive evolution** of rule arrays, initial conditions and rule tensors (random mutations, kept unless the loss
+  increases), running entirely on the GPU and batched over independent runs. Wolfram's lifetime experiment runs 4,096
+  times in about two seconds on one desktop GPU.
 
 > The original prototype is kept in [`legacy/`](legacy/README.md), together with a list of the problems it had.
 
@@ -23,6 +26,7 @@ This package generalises them and runs them on accelerators:
 ```bash
 pip install -e ".[dev]"            # CPU
 pip install -e ".[dev,cuda12]"     # NVIDIA GPU (CUDA 12)
+pip install -e ".[dev,bench]"      # also the CPU baselines and plotting used by benchmarks/ and reproduce/
 ```
 
 Tested with Python 3.11–3.13, jax 0.6.2, flax 0.10.7 and cax 0.2.1. These versions are pinned in `pyproject.toml`.
@@ -31,11 +35,19 @@ Tested with Python 3.11–3.13, jax 0.6.2, flax 0.10.7 and cax 0.2.1. These vers
 
 ```python
 import jax
+import numpy as np
 import stica
 
-# simulate: random IC and rule tensor for 3 states on a 32x32 grid, 50 steps
+# Wolfram's rule arrays: rules 4 and 146 on a 64 x 31 array; evolve 1,024 arrays whose pattern lives exactly 50 steps
+ic, ra0 = stica.single_cell(31), np.zeros((64, 31), np.int8)          # ra0: every cell uses rules[0] = rule 4
+res = stica.evolve_rule_array_batch(jax.random.PRNGKey(0), 1024, ic, ra0, [4, 146],
+                                    objective=stica.LifetimeLoss(50), iterations=10_000, stop_at=0.0)
+print((res.solved_at > 0).mean())                 # fraction of runs that reached lifetime 50
+traj = stica.simulate_rule_array(ic, res.ra[0], [4, 146])              # (65, 31): the IC and every later step
+
+# 2D STICA: random IC and rule tensor for 3 states on a 32x32 grid, 50 steps
 n, G, T = 3, 32, 50
-key_ic, key_srt = jax.random.split(jax.random.PRNGKey(0))
+key_ic, key_srt = jax.random.split(jax.random.PRNGKey(1))
 ic = jax.random.randint(key_ic, (G, G), 0, n)
 srt = jax.random.randint(key_srt, (T, G, G, stica.num_rules(n)), 0, n)
 traj = stica.simulate(ic, srt, n)                 # (T + 1, G, G): the IC and every later step
@@ -45,15 +57,50 @@ ca = stica.STICA(srt, num_states=n)
 traj = ca.run(ic)
 state, cells = ca.step(stica.initial_state(ic))  # one step at a time; state[..., 1] is the time
 
-# adaptive evolution: 16 independent runs in parallel
-res = stica.run_ga_batch(jax.random.PRNGKey(1), 16, grid_size=32, n=2, iterations=1000,
+# adaptive evolution in 2D: 16 independent runs in parallel
+res = stica.run_ga_batch(jax.random.PRNGKey(2), 16, grid_size=32, n=2, iterations=1000,
                          ic_count=32, srt_count=32 * 32, objective="surface")
 print(res.best)                                   # best objective value of each run
 ```
 
-`python examples/run_ga.py --help` runs a batch from the command line and saves the results and their metadata.
+`python examples/run_ga.py --help` runs a 2D batch from the command line and saves the results and their metadata.
 
-## The model
+## Wolfram's rule arrays (1D)
+
+A rule array `ra` (T, W) holds, for every step and cell, an index into a list of rules. Step t computes
+
+```
+cell'(x) = rules[ra[t, x]][code_t(x)]
+```
+
+where code_t(x) is the neighbourhood of x read as a base-k number. The conventions are those of the `RuleArray`
+code that Wolfram published with the figures of [1]:
+
+- Rule numbers follow `CellularAutomaton`. The neighbourhood (left, ..., right) is read with the leftmost cell most
+  significant, and digit `code` of the rule number (base k) is the new state. Rules 4 and 146 are `[4, 146]`; Wolfram's
+  two-input And and Xor are `[8, 6]` with `radius=0.5`.
+- The lattice is cyclic (`boundary="fixed"` treats cells outside as 0 instead).
+- Radius-1/2 rules alternate between reading (centre, right) on even steps and (left, centre) on odd steps
+  (`neighborhood="alternating"`, Wolfram's default), or always read one pair.
+- `single_cell(W)` puts the single black cell at (W - 1) // 2, like `CenterArray[1, W]`.
+- `ra` may have shape (T, W), (T, 1) (Wolfram's "layered" array), (1, W) ("vertically layered") or (1, 1).
+- `simulate_table_array` is the generalisation in which every cell and step owns a full lookup table,
+  tables[t, x, code].
+
+`LifetimeLoss(target)` is Wolfram's loss: |lifetime - target|, or infinity if the pattern outlives the array.
+`evolve_rule_array` and `evolve_rule_array_batch` run his adaptive evolution (see Optimisation).
+
+**Checked against Wolfram's own results** (`tests/test_rulearray.py`):
+- **Published figures.** [1] shows 12 evolved lifetime-50 rule arrays (64 × 31), 8 example arrays and 4 hand-built
+  solutions. `reproduce/extract_wolfram_figures.py` reads every cell's rule and state off the published images
+  (`tests/data/wolfram_rule_arrays.json`). The simulator reproduces all of them cell for cell: 24,180 cells of the
+  lifetime-50 arrays alone, with no mismatch.
+- **His code.** A line-by-line port of Wolfram's `RuleArray` function, for radius 1 and all three radius-1/2
+  neighbourhoods.
+- **Known patterns.** Rule 90 grown from one cell is Pascal's triangle mod 2, and the centre column of rule 30 is
+  OEIS A051023.
+
+## The 2D model
 
 **State and neighbourhood.**
 - Cells take states 0..n-1, and each cell sees its 8 Moore neighbours.
@@ -94,26 +141,59 @@ index = s * C(7 + n, 8) + rank(a_1, ..., a_{n-1})
 
 ## Optimisation
 
-`run_ga` and `run_ga_batch` implement a (1+1) evolutionary strategy, i.e. a stochastic hill climber. Each iteration:
+All optimisers share one compiled (1+1) evolutionary loop (`stica.hill_climb`), i.e. a stochastic hill climber. Each
+iteration:
 
-1. picks exactly `ic_count` distinct IC cells and `srt_count` distinct SRT entries;
-2. moves each one to a uniformly chosen different state;
-3. simulates the candidate and evaluates the objective;
-4. keeps the candidate if the objective did not increase.
+1. picks exactly the requested number of distinct entries (cells of the IC, entries of the rule tensor, or cells of
+   the rule array);
+2. moves each one to a uniformly chosen different value (another state, or another rule from the set);
+3. simulates the candidate and evaluates the loss;
+4. keeps the candidate if the loss did not increase.
 
 Notes:
 - Keeping ties (`accept_ties=True`, the default) follows Wolfram's adaptive evolution [1].
 - `accept_ties=False` keeps only strict improvements, as the legacy code did.
+- `stop_at` freezes a run once its loss reaches that value; Wolfram's runs stop at zero loss.
 - The whole loop is one compiled `lax.scan`. Only the mutated entries are written, and they are reverted if the
   candidate is rejected.
-- `run_ga_batch` runs independent chains in parallel with `vmap`.
-- Results are reproducible from the PRNG key.
+- The batch versions run independent chains in parallel with `vmap`; results are reproducible from the PRNG key.
 - `record_mutations=True` returns every mutation (position, old value, new value).
 
-**Objectives.** These are minimised, and they treat the trajectory as a 3D voxel lattice, with time as the first axis.
+2D: `run_ga` and `run_ga_batch` evolve an IC and an SRT. Their objectives are minimised and treat the trajectory as a
+3D voxel lattice, with time as the first axis:
 - Built-in: `"surface"` (negative exposed surface area) and `"surface_to_volume"`.
 - Any JAX function from the trajectory to a scalar also works.
 - `stica.lattice_to_stl` exports a trajectory as a voxel mesh.
+
+1D: `evolve_rule_array` and `evolve_rule_array_batch` evolve a rule array from a fixed initial condition. The loss is
+any hashable function of the trajectory, such as `LifetimeLoss(target)`.
+
+## Reproducing Wolfram's lifetime experiments
+
+```bash
+python reproduce/wolfram_lifetime.py      # writes reproduce/results/wolfram_lifetime.{json,png}
+```
+
+The script reruns the two lifetime experiments of [1] with the settings in the code attached to his figures. Each run:
+- starts from a single cell and a uniform array of the first rule;
+- switches one cell's rule per mutation and keeps mutations that do not increase the loss;
+- stops at zero loss or after 10,000 mutations.
+
+Wolfram's random seeds drive Mathematica's generator, so single runs cannot be matched; the comparison is with the
+distribution over many runs.
+
+| Experiment | Runs | Solved | Mutations to solution, median (IQR) | Time, one GPU |
+|---|---:|---:|---:|---:|
+| Rules 4/146, 64 × 31, lifetime 50 | 4,096 | 99.9% | 1,992 (1,108–2,921) | 2.3 s |
+| And/Xor (radius 1/2), 40 × 21, lifetime 30 | 4,096 | 100% | 1,830 (1,418–2,400) | 1.6 s |
+| Rules 4/146, 640 × 311, lifetime 500 (100× the cells) | 64 | 6% within 100,000 | — | 127 s |
+
+How these compare with Wolfram's runs:
+- His one And/Xor run took 1,705 mutations, inside the interquartile range of ours.
+- He writes that only 780 of those mutations "contribute" to the final array. He does not say how they were
+  counted, so we do not compare against that number.
+- Compilation (about 3 s per setup) is not included in the times.
+- The GPU is an NVIDIA RTX 4000 Ada.
 
 ## Tests
 
@@ -121,52 +201,101 @@ Notes:
 JAX_PLATFORMS=cpu pytest -q
 ```
 
-The suite has 60 tests. They check:
-- simulation, bit for bit, against a loop-based NumPy reference: 2–6 states, dense neighbourhoods, and every
+The suite has 104 tests. They check:
+- the 1D rule arrays against Wolfram's published figures, a port of his code, known elementary-CA patterns and a
+  generic k-colour reference, for every neighbourhood, boundary and rule-sharing level;
+- the 2D simulation, bit for bit, against a loop-based NumPy reference: 2–6 states, dense neighbourhoods, and every
   rule-sharing level;
-- the rule index exhaustively, up to 8 states;
+- the 2D rule index exhaustively, up to 8 states;
 - the CAX model: equal to `simulate`, step-by-step use, pause and resume, swapping the SRT;
 - Conway's Game of Life as a homogeneous special case;
-- the optimiser: the exact mutation counts, both acceptance rules, determinism, and batched runs equal to single runs.
+- the optimisers: the exact mutation counts, both acceptance rules, stopping at a target, determinism, replay of the
+  recorded mutations, and batched runs equal to single runs;
+- the CPU baselines used in the benchmarks: each computes exactly what the package computes.
 
 CI runs the suite on every push.
 
 ## Benchmarks
 
 ```bash
-python benchmarks/bench.py --impl stica      # this package
-python benchmarks/bench.py --impl legacy     # the original prototype, for reference
-python benchmarks/summarize.py benchmarks/results/*.csv
+STICA_MEMCAP=14G benchmarks/run_all.sh      # every benchmark below, one implementation at a time
 ```
 
-**Method.**
-- Timing uses `time.perf_counter`. Each condition is compiled in a separate warm-up call that is not recorded.
-- The device is synchronised before the clock stops.
+**Implementations compared** (all checked equal in the tests; `benchmarks/baselines.py`):
+- **NumPy**, vectorised over the lattice (and over the batch where there is one).
+- **CellPyLib** [3], the generic way to run an inhomogeneous CA in an existing Python CA library: a rule callable that
+  receives the cell index and time step.
+- **numba** [4], compiled loops: the closest analogue to Wolfram's own `FunctionCompile` code. It runs on one core,
+  and also on all 20 threads, parallelised over runs or over the rows of a step.
+- **stica** on the CPU (XLA) and on the GPU.
+
+**Method** (`benchmarks/scaling.py`):
+- Each condition is compiled in a separate call that is not recorded.
+- It is then run for a second to let clocks settle.
+- Seven repetitions follow, each a loop of calls lasting at least 0.2 s.
 - Every repetition is saved to CSV, and a JSON file records the software and hardware.
 
-**Results** (`benchmarks/results/`): NVIDIA RTX 4000 Ada (a desktop GPU that also drives the display, under WSL2),
-jax 0.6.2, medians over 7 repetitions.
+**Results.** NVIDIA RTX 4000 Ada (a desktop GPU that also drives the display, under WSL2) and Intel Xeon w5-2445
+(10 cores, 20 threads). Medians, in cell updates per second unless stated. Full tables: `benchmarks/results/
+scaling_tables.md`; plot: `benchmarks/results/scaling.png`.
 
-| Task | Legacy prototype | stica | stica, cell updates/s |
-|---|---:|---:|---:|
-| Simulate 100×100, 1000 steps, 2 states | 474 ms | 28.6 ms | 3.5×10⁸ |
-| Simulate 64×64, 200 steps, 3 states | 290 ms | 2.2 ms | 3.7×10⁸ |
-| Simulate 64×64, 200 steps, 4 states | out of GPU memory | 2.2 ms | 3.7×10⁸ |
-| Optimisation step, 100×100×99, 1 run | 357 ms | 3.5 ms | 2.8×10⁸ |
-| Optimisation step, 100×100×99, 16 runs (per run) | — | 0.32 ms | 3.1×10⁹ |
+| Workload | NumPy | CellPyLib | numba, 1 core | numba, 20 threads | stica, CPU | stica, GPU |
+|---|---:|---:|---:|---:|---:|---:|
+| 1D, one 64 × 64 rule array | 5.0e6 | 1.7e6 | **7.2e8** | — | 2.4e7 | 7.0e6 |
+| 1D, one 8192 × 8192 rule array | 1.2e8 | 2.0e6 | 7.2e8 | — | 4.6e8 | **4.0e9** |
+| 1D, 32,768 rule arrays of 64 × 64 | 8.0e7 | 1.7e6 | 7.0e8 | 4.8e9 | 4.0e8 | **2.9e10** |
+| 2D, 2 states, 256 × 256, 256 steps | 3.9e7 | 1.8e5 | 2.2e8 | 6.0e8 | 2.0e8 | **4.4e9** |
+| 2D, 4 states, 128 × 128, 128 steps | 2.5e7 | 1.8e5 | 2.6e7 | 1.1e8 | 3.9e7 | **1.3e9** |
+| Wolfram's lifetime evolution: candidates / s | — | — | 6.6e5 | 5.6e6 | 5.5e4 | **2.4e7** |
+| Wolfram's lifetime evolution: solved runs / s | — | — | 275 | **2,697** | 5.5 | 2,409 |
 
 **How to read these numbers.**
-- The legacy column is the project's own earlier prototype, not an independent baseline.
-- Most of its time went into converting the whole rule tensor to float64 and copying it to the GPU on every call.
-- A single trajectory on the GPU is limited by per-step overhead (roughly 10–50 µs per step), not by arithmetic.
-  Throughput comes from batching independent runs.
+- **One small trajectory.** A compiled CPU loop is fastest. On the GPU every step costs a few microseconds
+  (3–15 µs here) whatever its size, so a single small run is limited by latency, not arithmetic.
+- **Large batches and 2D lattices.** The GPU is ahead. At the largest sizes measured it is 6–12× faster than numba
+  on 20 threads and 20–50× faster than one core.
+- **One large 1D lattice.** The GPU is 5.5× faster than one core.
+- **Wolfram's evolution at his size.** In solved runs per second, the 20-thread CPU matches the GPU:
+  - each CPU run stops at its solution, and stops simulating once its pattern dies;
+  - the GPU batch runs the whole 10,000-mutation budget in lock step, although the median run is solved after
+    about 2,000.
+  - The GPU still evaluates 4× more candidate arrays per second.
+- **Provisional numbers.** The GPU also drives the display. Final numbers need a dedicated GPU.
+
+**Comparison with the legacy prototype** (`benchmarks/bench.py`; `benchmarks/results/legacy_tables.md`). This is the
+project's own earlier code, not an independent baseline. Most of its time went into converting the whole rule tensor
+to float64 and copying it to the GPU on every call.
+
+| Task | Legacy prototype | stica |
+|---|---:|---:|
+| Simulate 100 × 100, 1000 steps, 2 states | 471 ms | 3.7 ms |
+| Simulate 64 × 64, 200 steps, 4 states | 1,210 ms | 1.5 ms |
+| Optimisation step, 100 × 100 × 99, 1 run | 319 ms | 0.73 ms |
+| Optimisation step, 100 × 100 × 99, 16 runs (per run) | — | 0.24 ms |
+
+## Implementation notes
+
+These choices account for most of the speed and are easy to get wrong in JAX:
+- **Unrolled time loop.** On a GPU every iteration of a compiled loop costs tens of microseconds, more than a small
+  CA step. The time loop therefore runs 16 steps per iteration, which is 2–8× faster.
+- **A barrier between steps.** Each step ends in an optimisation barrier. Without it, XLA fuses consecutive unrolled
+  stencil steps into each other. When a whole run fits in one unrolled block, that fusion grows exponentially and
+  compilation stalls.
+- **Keeping the rule tensor out of the loop carry.** CAX's default loop (`nnx.scan`) carries the whole module, rule
+  tensor included, from step to step, and `nnx.jit` returns the module state from every call. With a large rule
+  tensor both cost more than the simulation. `STICA` keeps the module as a loop constant, and `STICA.run` uses Flax's
+  split/merge with `jax.jit`.
+- **Small writes.** Rule tensors are int8. A mutation writes, and if rejected reverts, only the entries it touched.
+- **Batching.** Independent runs are batched with `vmap`, which is where the throughput comes from.
 
 ## Repository layout
 
 ```
-src/stica/       rules.py (indexing), ca.py (CAX model, simulate), optimize.py, objectives.py, export.py
-tests/           pytest suite and the NumPy reference implementation
-benchmarks/      timing harness, summaries, recorded results
+src/stica/       rules.py (2D indexing), ca.py (CAX model, simulate), rulearray.py (Wolfram's 1D rule arrays),
+                 optimize.py (the shared evolution loop), objectives.py, export.py
+tests/           pytest suite, NumPy references, data read off Wolfram's figures
+reproduce/       Wolfram's lifetime experiments; extraction of his published rule arrays
+benchmarks/      CPU baselines, scaling and legacy benchmarks, recorded results
 examples/        command-line example
 legacy/          the original implementation (superseded) and its known issues
 ```
@@ -176,6 +305,10 @@ legacy/          the original implementation (superseded) and its known issues
 1. S. Wolfram, "What's Really Going On in Machine Learning? Some Minimal Models," *Stephen Wolfram Writings*, 2024.
    https://writings.stephenwolfram.com/2024/08/whats-really-going-on-in-machine-learning-some-minimal-models/
 2. M. Faldor and A. Cully, "CAX: Cellular Automata Accelerated in JAX," ICLR 2025. arXiv:2410.02651.
+3. L. M. Antunes, "CellPyLib: A Python Library for working with Cellular Automata," *Journal of Open Source
+   Software* 6(67), 3608 (2021).
+4. S. K. Lam, A. Pitrou and S. Seibert, "Numba: a LLVM-based Python JIT compiler," *Proc. Second Workshop on the
+   LLVM Compiler Infrastructure in HPC* (2015).
 
 ## License
 
