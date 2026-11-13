@@ -1,12 +1,12 @@
 {
  "metadata": {
-  "date": "2026-11-12T18:42:53",
+  "date": "2026-11-13T00:19:49",
   "python": "3.13.5",
   "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
   "jax": "0.6.2",
   "stica": "0.1.0",
   "device": "NVIDIA RTX 4000 Ada Generation",
-  "git_commit": "ebb9bcc"
+  "git_commit": "14b24f4"
  },
  "published": {
   "arrays": 12,
@@ -62,11 +62,11 @@
     "median": 818.0
    },
    "timing": {
-    "compile_seconds": 2.594653642969206,
-    "run_seconds": 2.2859237471129745,
-    "runs_per_second": 1791.8357973108577,
-    "candidate_evaluations_per_second": 17918357.973108575,
-    "cell_updates_per_second": 35550022218.647415,
+    "compile_seconds": 2.6732874909999964,
+    "run_seconds": 2.3830172819999973,
+    "runs_per_second": 1718.8293307559843,
+    "candidate_evaluations_per_second": 17188293.307559844,
+    "cell_updates_per_second": 34101573922.198727,
     "note": "every run executes the full iteration budget; runs that reach zero loss stop changing"
    },
    "wolfram_reported": null
@@ -104,11 +104,11 @@
     "median": 414.0
    },
    "timing": {
-    "compile_seconds": 3.441627813037485,
-    "run_seconds": 1.5625199971254915,
-    "runs_per_second": 2621.4064508199926,
-    "candidate_evaluations_per_second": 26214064.508199926,
-    "cell_updates_per_second": 22019814186.88794,
+    "compile_seconds": 3.3126217829999973,
+    "run_seconds": 1.5835814630000016,
+    "runs_per_second": 2586.542022435884,
+    "candidate_evaluations_per_second": 25865420.224358838,
+    "cell_updates_per_second": 21726952988.461426,
     "note": "every run executes the full iteration budget; runs that reach zero loss stop changing"
    },
    "wolfram_reported": "one run shown: 1705 mutations, 'only 780 of them actually contribute to generating the final rule array; all the others are discarded along the way' (the counting is not specified)"
@@ -148,10 +148,10 @@
   },
   "timing": {
    "compile_seconds": 0.0,
-   "run_seconds": 188.47609627107158,
-   "runs_per_second": 21.73219883602119,
-   "candidate_evaluations_per_second": 2173219.883602119,
-   "cell_updates_per_second": 432557685632.16583,
+   "run_seconds": 190.23618386200002,
+   "runs_per_second": 21.531129971421713,
+   "candidate_evaluations_per_second": 2153112.997142171,
+   "cell_updates_per_second": 428555610951.17773,
    "note": "one call for all runs, including compilation"
   },
   "wolfram_reported": null,

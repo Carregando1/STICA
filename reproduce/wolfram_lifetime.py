@@ -239,7 +239,7 @@ def main():
         results["rerun"][name] = summarize(name, setup, res, c, r)
         solved = np.flatnonzero(res.solved_at > 0)
         examples[name] = dict(solved_at=res.solved_at, best_trace=res.best_trace,
-                              solutions=[res.ra[i] for i in solved[:6]])
+                              solutions=[res.ra[i] for i in solved[:12]])
         s = results["rerun"][name]
         print(f"2. {s['label']}: {s['solved_fraction']:.1%} of {s['runs']} runs solved; median "
               f"{s['mutations_to_solution']['median']:.0f} mutations (IQR {s['mutations_to_solution']['q25']:.0f}-"
@@ -263,6 +263,11 @@ def main():
               f"including compilation", flush=True)
 
     (OUT / "wolfram_lifetime.json").write_text(json.dumps(results, indent=1) + "\n")
+    # per-run data for figures: mutations to solution of every run, and the first evolved solutions
+    np.savez_compressed(OUT / "wolfram_lifetime_runs.npz",
+                        **{f"{k}_solved_at": v["solved_at"] for k, v in examples.items() if "solved_at" in v},
+                        **{f"{k}_solutions": np.stack(v["solutions"]) for k, v in examples.items()
+                           if v.get("solutions")})
     make_figure(results, examples, OUT / "wolfram_lifetime.png")
     print(f"wrote {OUT.relative_to(ROOT)}/wolfram_lifetime.json and .png")
 
