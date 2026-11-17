@@ -89,14 +89,16 @@ def suite_grid1d(rec, args):
             if W * W * (9 if impl == "unpacked" else 1) > args.max_bytes:
                 break
             ic = jnp.asarray((rng.random(W) < 0.5).astype(np.int8))
-            ra = jnp.asarray(rng.integers(0, 2, (W, W)).astype(np.int8))
             if impl == "unpacked":
+                ra = jnp.asarray(rng.integers(0, 2, (W, W)).astype(np.int8))
                 tables = stica.rule_tables([4, 146])
-                fn = lambda: stica.rule_array_rollout(ic, ra, tables)
-                fn = jax.jit(fn)
+                fn = jax.jit(lambda: stica.rule_array_rollout(ic, ra, tables))
             else:
+                # random packed words drawn directly (packing a W x W int8 array needs a 4x larger temporary)
+                ra = jax.random.bits(jax.random.PRNGKey(W), (1, W, -(-W // 32)), jnp.uint32) & jnp.asarray(
+                    stica.packed._valid_mask(W))
                 model = _Model(W, 2, 1, "alternating", "periodic")
-                icw, planes, tm = pack_cells(ic), pack_rule_array(ra, 2), _tmask([4, 146], 1)
+                icw, planes, tm = pack_cells(ic), ra, _tmask([4, 146], 1)
                 fn = lambda: _simulate_words(icw, planes, tm, model, W)
             if rec("grid1d", impl, "W x W, K=2, r=1", 2, W, 1, W * W, W * W, fn) > args.max_call:
                 break
