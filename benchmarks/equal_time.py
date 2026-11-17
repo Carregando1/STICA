@@ -514,8 +514,17 @@ def metric_anytime(args) -> dict:
 
 
 def metric_reach(args) -> dict:
-    scales = [int(s) for s in args.scales.split(",")]
-    return dict(rows=[_budgeted(args, scaled(s), args.reach_budget) for s in scales])
+    """Each size is saved as it completes (<impl>_reach.partial.json), so a preempted job resumes at the next size."""
+    partial = Path(args.out) / f"{args.impl}_reach.partial.json"
+    rows = json.loads(partial.read_text()) if partial.exists() else []
+    done = {r["setup"]["scale"] for r in rows}
+    for s in (int(s) for s in args.scales.split(",")):
+        if s in done:
+            print(f"    scale {s}: done earlier", flush=True)
+            continue
+        rows.append(_budgeted(args, scaled(s), args.reach_budget))
+        partial.write_text(json.dumps(rows))
+    return dict(rows=sorted(rows, key=lambda r: r["setup"]["scale"]))
 
 
 METRICS = dict(latency=metric_latency, first=metric_first, redo=metric_redo, census=metric_census,
