@@ -73,7 +73,14 @@ class Recorder:
         self.args, self.rows = args, []
 
     def __call__(self, suite, impl, series, param, size, batch, work, rule_bytes, fn):
-        sec, note = measure(fn, self.args)
+        try:
+            sec, note = measure(fn, self.args)
+        except Exception as e:                                       # out of device memory: this series ends here
+            if "RESOURCE_EXHAUSTED" not in str(e):
+                raise
+            print(f"  {suite:8s} {impl:18s} {series:22s} param={param:5} size={size:7d}: out of memory, series ends",
+                  flush=True)
+            return float("inf")
         self.rows.append(dict(suite=suite, impl=impl, series=series, param=param, size=size, batch=batch,
                               cell_updates=work, rule_bytes=rule_bytes, seconds=sec, rate=work / sec, note=note))
         print(f"  {suite:8s} {impl:18s} {series:22s} param={param:5} size={size:7d} batch={batch:8d}: "
