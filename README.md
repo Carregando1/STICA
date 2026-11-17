@@ -125,6 +125,33 @@ code that Wolfram published with the figures of [1]:
 - **Tests.** Everything here is tested bit for bit against the unpacked simulator, and every solution it reports is
   re-checked with it.
 
+### Stochastic rule arrays
+
+`stica.stochastic` makes a two-rule binary array stochastic in three ways, alone or together; each run draws its own
+randomness:
+
+- **probabilistic rules**: cell x at step t uses the second rule with probability p[t, x];
+- **asynchronous updates**: each cell updates at a step with probability `alpha`, otherwise keeps its state;
+- **noisy trajectories**: after each step each cell's state flips with probability `epsilon`.
+
+p in {0, 1}, alpha = 1, epsilon = 0 is deterministic STICA, reproduced bit for bit. Probabilities are multiples of
+2^-b, which makes sampling on packed words cheap: a word of 32 Bernoulli bits is a bitwise comparison of b random
+words with the threshold, and the fused kernel takes the update and noise masks as extra inputs.
+
+```python
+from stica.stochastic import simulate_stochastic, evolve_stochastic_batch, success_probability
+runs = simulate_stochastic(key, ic, [4, 146], prob=p, alpha=1 - 2**-8, epsilon=2**-10, num_samples=1000)
+evo = evolve_stochastic_batch(key, 256, ic, [4, 146], target=50, num_steps=64, iterations=20_000,
+                              genome="probabilistic", rule_bits=2, samples=64)
+rel = success_probability(key, ic, [4, 146], solutions, target=50, epsilon=2**-10, samples=256)
+```
+
+`evolve_stochastic_batch` is Wolfram's adaptive evolution with a stochastic fitness: parent and child are scored on
+the same random runs (common random numbers), the child kept unless its mean loss is higher. The genome is a
+deterministic rule array (under stochastic dynamics) or a probabilistic one. `benchmarks/stochastic.py` compares
+the cost of stochastic and deterministic runs, the robustness of deterministic solutions, and evolution under each
+kind of stochasticity.
+
 ## The 2D model
 
 **State and neighbourhood.**
@@ -337,6 +364,12 @@ lifetime 500). Best batch size for each entry.
   Wolfram's size and 5× faster at 100× the cells. Without the fused kernel the GPU is only 1.9× ahead at Wolfram's
   size, and at 100× the cells the bit-packed CPU on 20 threads is 2× faster than it.
 - **Provisional numbers.** The GPU also drives the display. Final numbers need a dedicated GPU.
+
+**Scaling laws** (`benchmarks/scaling_laws.py`): time against grid size and rule-space size on one device; 1D arrays
+up to 65,536 x 65,536, batches up to 2^20 Wolfram-size arrays, K = 2 .. 256 rules per array and radius 1/2 .. 3; 2D
+STICA with n = 2 .. 6 states (R = 18 .. 7,722 rules per cell) at all four sharing levels, as far as the rule tensor
+fits; evolution throughput against size and K. Each series is fitted with t = t0 + N / rate (fixed cost per call and
+peak rate).
 
 **Equal-time metrics** (`benchmarks/equal_time.py`, with the matching phases of `reproduce/wolfram_native.wls` for
 Wolfram's own code): what each implementation achieves in the same wall-clock time. Seconds per run one at a time;

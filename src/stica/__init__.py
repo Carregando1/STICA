@@ -4,6 +4,7 @@ from .export import lattice_to_stl
 from .objectives import OBJECTIVES, get_objective, neg_surface, neg_surface_to_volume, surface_area
 from .optimize import (GAResult, Mutations, hill_climb, hill_climb_batch, init_state, run_ga, run_ga_batch,
                        sample_distinct, srt_shape, steps_to_target)
+from . import stochastic
 from .packed import (PackedEvolution, PackedState, evolve_packed_batch, pack_cells, pack_rule_array, simulate_packed,
                      unpack_cells, unpack_rule_array)
 from .rulearray import (LifetimeLoss, RuleArrayResult, evolve_rule_array, evolve_rule_array_batch, lifetime,
@@ -20,6 +21,7 @@ __all__ = [
     "OBJECTIVES", "get_objective", "neg_surface", "neg_surface_to_volume", "surface_area",
     "GAResult", "Mutations", "hill_climb", "hill_climb_batch", "init_state", "run_ga", "run_ga_batch",
     "sample_distinct", "srt_shape", "steps_to_target",
+    "stochastic",
     "PackedEvolution", "PackedState", "evolve_packed_batch", "pack_cells", "pack_rule_array", "simulate_packed",
     "unpack_cells",
     "unpack_rule_array",

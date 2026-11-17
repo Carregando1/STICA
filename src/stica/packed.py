@@ -421,12 +421,17 @@ def _fused_step_logic(cells: list, s1: list, t, tables: np.ndarray, patterns, wi
 
 
 @partial(jax.jit, static_argnames=("rules", "width", "radius", "neighborhood", "boundary", "rows_only"))
-def fused_rollout(ic_words: Array, masks: Array, *, rules: tuple, width: int, radius: float = 1,
-                  neighborhood: str = "alternating", boundary: str = "periodic", rows_only: bool = False) -> Array:
+def fused_rollout(ic_words: Array, masks: Array, update: Array | None = None, noise: Array | None = None, *,
+                  rules: tuple, width: int, radius: float = 1, neighborhood: str = "alternating",
+                  boundary: str = "periodic", rows_only: bool = False) -> Array:
     """Packed trajectories of many runs with one fused GPU kernel. ic_words (nw, B) and masks (T, nw, B), uint32,
     where a set bit in masks means the cell uses rules[1]; B must be a multiple of 128. Returns (T + 1, nw, B), or
     with rows_only (T + 1, 1, B) holding the OR of each row's words (non-zero exactly where the row has a live
-    cell), which is all a lifetime needs and a fraction of the memory traffic."""
+    cell), which is all a lifetime needs and a fraction of the memory traffic.
+
+    Stochastic dynamics (stica.stochastic): `update` (T, nw, B) marks the cells that update at each step (the others
+    keep their state; asynchronous updating) and `noise` (T, nw, B) the cells whose new state is then flipped (noisy
+    trajectories). Without them the kernel is the deterministic one, unchanged."""
     from jax.experimental import pallas as pl
 
     T, nw, B = masks.shape
@@ -444,23 +449,36 @@ def fused_rollout(ic_words: Array, masks: Array, *, rules: tuple, width: int, ra
             for w in range(nw):
                 out_ref[row, w, :] = words[w]
 
-    def kernel(ic_ref, masks_ref, out_ref):
+    extra = [a for a in (update, noise) if a is not None]
+    has_update, has_noise = update is not None, noise is not None
+
+    def kernel(ic_ref, masks_ref, *refs):
+        out_ref = refs[-1]
+        update_ref = refs[0] if has_update else None
+        noise_ref = refs[int(has_update)] if has_noise else None
         cells = [ic_ref[w, :] for w in range(nw)]
         store(out_ref, 0, cells)
 
         def body(t, cells):
             s1 = [masks_ref[t, w, :] for w in range(nw)]
             new = _fused_step_logic(list(cells), s1, t, tables, patterns, width, boundary, mask)
+            if has_update:
+                u = [update_ref[t, w, :] for w in range(nw)]
+                new = [(n & v) | (c & ~v) for n, v, c in zip(new, u, cells)]
+            if has_noise:
+                new = [n ^ noise_ref[t, w, :] for w, n in enumerate(new)]
+                new[-1] = new[-1] & jnp.uint32(int(mask[-1]))
             store(out_ref, t + 1, new)
             return tuple(new)
 
         jax.lax.fori_loop(0, T, body, tuple(cells))
 
     out_words = 1 if rows_only else nw
+    step_spec = pl.BlockSpec((T, nw, _BLOCK), lambda i: (0, 0, i))
     return pl.pallas_call(
         kernel, out_shape=jax.ShapeDtypeStruct((T + 1, out_words, B), _U), grid=(B // _BLOCK,),
-        in_specs=[pl.BlockSpec((nw, _BLOCK), lambda i: (0, i)), pl.BlockSpec((T, nw, _BLOCK), lambda i: (0, 0, i))],
-        out_specs=pl.BlockSpec((T + 1, out_words, _BLOCK), lambda i: (0, 0, i)))(ic_words, masks)
+        in_specs=[pl.BlockSpec((nw, _BLOCK), lambda i: (0, i)), step_spec] + [step_spec] * len(extra),
+        out_specs=pl.BlockSpec((T + 1, out_words, _BLOCK), lambda i: (0, 0, i)))(ic_words, masks, *extra)
 
 
 @partial(jax.jit, static_argnames=("rules", "width", "radius", "neighborhood", "boundary", "objective", "num_lanes",
