@@ -1,6 +1,6 @@
 {
 	"version":"15.0.1 for Linux x86 (64-bit) (July 2, 2026)",
-	"date":"2026-11-16T19:30:55",
+	"date":"2026-11-16T23:37:20",
 	"code":{
 		"url":"https:\/\/content.wolfram.com\/sites\/43\/2024\/08\/sw08202024arraysBimg3_copy.txt",
 		"sha256":"1b2bff4bf21d0124d3609e4979584724054610217bc08bae1c86238918220e11",
@@ -25098,6 +25098,57 @@
 		"accepted_changing_lifetime":8,
 		"distinct_cells_flipped":731,
 		"cells_flipped_odd_times":424,
-		"cells":840
+		"cells":840,
+		"pattern_changing_mutations":[
+			1210,
+			1373,
+			1379,
+			1408,
+			1427,
+			1454,
+			1512,
+			1574,
+			1622,
+			1641,
+			1654,
+			1660,
+			1690,
+			1692,
+			1703
+		],
+		"lifetime_changes":[
+			[
+				1210,
+				"15"
+			],
+			[
+				1373,
+				"11"
+			],
+			[
+				1379,
+				"10"
+			],
+			[
+				1454,
+				"9"
+			],
+			[
+				1622,
+				"7"
+			],
+			[
+				1641,
+				"6"
+			],
+			[
+				1654,
+				"2"
+			],
+			[
+				1703,
+				"0"
+			]
+		]
 	}
 }

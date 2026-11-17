@@ -139,7 +139,10 @@ If[MemberQ[phases, "detail"],
      "accepted_changing_pattern" -> Count[acc, k_ /; states[[k]] =!= states[[k + 1]]],
      "accepted_changing_lifetime" -> Count[acc, k_ /; losses[[k]] =!= losses[[k + 1]]],
      "distinct_cells_flipped" -> Length[flips], "cells_flipped_odd_times" -> Count[flips, _?OddQ],
-     "cells" -> 40*21|>;
+     "cells" -> 40*21,
+     (* mutation k (1-based) produced res[[k + 1]]; for plotting the run as it evolves *)
+     "pattern_changing_mutations" -> Select[acc, states[[#]] =!= states[[# + 1]] &],
+     "lifetime_changes" -> ({#, ToString[losses[[# + 1]]]} & /@ Select[acc, losses[[#]] =!= losses[[# + 1]] &])|>;
   Print["detail: And/Xor seed 234234: ", out["detail_andxor_seed234234"]];
   save[];
   ];
