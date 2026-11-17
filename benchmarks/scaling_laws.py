@@ -31,6 +31,7 @@ import platform
 import socket
 import subprocess
 import time
+from functools import partial
 from pathlib import Path
 
 import jax
@@ -169,6 +170,14 @@ def suite_rules1d(rec, args):
             rec("rules1d", impl, f"radius, {N} x {N}", 2 ** m, N, 1, N * N, N * N // 8, fn)
 
 
+@partial(jax.jit, static_argnames=("shape",))
+def _repeat(block, shape):
+    """block (tb, hb, wb, R) repeated to (Ts, Hs, Ws, R) in one gather (a single output buffer)."""
+    Ts, Hs, Ws = shape
+    t, x, y = (jnp.arange(m) % b for m, b in zip(shape, block.shape[:3]))
+    return block[t[:, None, None], x[None, :, None], y[None, None, :]]
+
+
 SHARING = {"spacetime": lambda G: (G, G, G), "time only": lambda G: (G, 1, 1), "space only": lambda G: (1, G, G),
            "homogeneous": lambda G: (1, 1, 1)}
 
@@ -183,13 +192,20 @@ def suite_grid2d(rec, args):
                 if nbytes > args.max_bytes or 4 * (G + 1) * G * G > args.max_bytes:
                     break
                 key = jax.random.PRNGKey(G * 10 + n)
-                # a random block of at most 64 x 64 cells tiled over time and space (the generator works in 32-bit
-                # words, 4x the memory of the tensor); the values do not change the work per step
+                # a random block of at most 64 x 64 cells repeated over time and space, written straight into the
+                # tensor (the generator works in 32-bit words, 4x the memory; jnp.tile makes a further copy); the
+                # values do not change the work per step
                 hb, wb = min(Hs, 64), min(Ws, 64)
                 tb = max(1, min(Ts, int(2 ** 26 // max(1, hb * wb * R))))
-                block = (jax.random.bits(key, (tb, hb, wb, R), jnp.uint8) % n).astype(jnp.int8)
-                srt = jnp.tile(block, (-(-Ts // tb), -(-Hs // hb), -(-Ws // wb), 1))[:Ts, :Hs, :Ws]
-                del block
+                try:
+                    block = (jax.random.bits(key, (tb, hb, wb, R), jnp.uint8) % n).astype(jnp.int8)
+                    srt = _repeat(block, (Ts, Hs, Ws))
+                    del block
+                except Exception as e:
+                    if "RESOURCE_EXHAUSTED" not in str(e):
+                        raise
+                    print(f"  grid2d   {sharing:18s} n={n} G={G}: rule tensor does not fit, series ends", flush=True)
+                    break
                 ic = (jax.random.bits(jax.random.fold_in(key, 1), (G, G), jnp.uint8) % n).astype(jnp.int32)
                 fn = lambda: stica.simulate(ic, srt, n, num_steps=G)
                 sec = rec("grid2d", sharing, f"n={n} (R={R})", n, G, 1, G ** 3, nbytes, fn)
