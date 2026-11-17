@@ -160,3 +160,38 @@ def test_fused_same_distribution_as_xla():
     sa, sb = np.asarray(a.solved_at), np.asarray(b.solved_at)
     assert abs((sa > 0).mean() - (sb > 0).mean()) < 0.06
     assert abs(np.median(sa[sa > 0]) - np.median(sb[sb > 0])) < 0.2 * np.median(sb[sb > 0])
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+@pytest.mark.parametrize("restart", [False, True])
+def test_continue_from_state(backend, restart):
+    """A run split into calls: every lane continues where it stood (its loss never rises, solved lanes stay put
+    without restart), its loss is that of its array, and every solution reported is one."""
+    H, W, target, n, chunk = 20, 31, 9, 8, 400
+    ic, ra0 = single_cell(W), np.zeros((H, W), np.int8)
+    kw = dict(objective=LifetimeLoss(target), iterations=chunk, stop_at=0.0, restart=restart, backend=backend)
+    res = evolve_packed_batch(jax.random.PRNGKey(20), n, ic, ra0, [4, 146], **kw)
+    total = int(np.asarray(res.solves).sum())
+    for c in range(1, 6):
+        prev = res
+        res = evolve_packed_batch(jax.random.PRNGKey(20 + c), n, ic, ra0, [4, 146], state=prev.state, **kw)
+        best, before = np.asarray(res.best), np.asarray(prev.best)
+        for i in range(n):
+            assert float(best[i]) == _check_lifetime(res.ra[i], W, target)
+            if np.asarray(res.solves)[i] > 0 and restart:
+                assert _check_lifetime(res.last_solution[i], W, target) == 0.0
+        if not restart:
+            assert np.all(best <= before)                       # a fresh start would begin at an infinite loss
+            done = before == 0
+            np.testing.assert_array_equal(np.asarray(res.ra)[done], np.asarray(prev.ra)[done])
+            np.testing.assert_array_equal(np.asarray(res.state.steps)[:n], (c + 1) * chunk)
+        total += int(np.asarray(res.solves).sum())
+    assert total > (n if restart else n // 2)
+    lean = evolve_packed_batch(jax.random.PRNGKey(20 + c), n, ic, ra0, [4, 146], state=prev.state, unpack=False,
+                               **kw)
+    assert lean.ra is None and lean.last_solution is None
+    np.testing.assert_array_equal(np.asarray(lean.best), np.asarray(res.best))
+    np.testing.assert_array_equal(np.asarray(lean.solves), np.asarray(res.solves))
+    with pytest.raises(ValueError):
+        other = "pallas" if backend == "xla" else "xla"
+        evolve_packed_batch(jax.random.PRNGKey(0), n, ic, ra0, [4, 146], state=res.state, **dict(kw, backend=other))

@@ -338,6 +338,13 @@ lifetime 500). Best batch size for each entry.
   size, and at 100× the cells the bit-packed CPU on 20 threads is 2× faster than it.
 - **Provisional numbers.** The GPU also drives the display. Final numbers need a dedicated GPU.
 
+**Equal-time metrics** (`benchmarks/equal_time.py`, with the matching phases of `reproduce/wolfram_native.wls` for
+Wolfram's own code): what each implementation achieves in the same wall-clock time. Seconds per run one at a time;
+seconds to the first solution with many runs at once; the time to redo Wolfram's experiments; a census of many
+runs (tails, precision, distinct solutions and patterns); best loss and solutions against time over a fixed budget
+at 640 x 311, lifetime 500; and the same over a ladder of sizes. Long runs are split into calls continued with
+`evolve_packed_batch(..., state=...)`.
+
 **Comparison with the legacy prototype** (`benchmarks/bench.py`; `benchmarks/results/legacy_tables.md`). This is the
 project's own earlier code, not an independent baseline. Most of its time went into converting the whole rule tensor
 to float64 and copying it to the GPU on every call.
@@ -383,7 +390,7 @@ src/stica/       rules.py (2D indexing), ca.py (CAX model, simulate), rulearray.
 tests/           pytest suite, NumPy references, data read off Wolfram's figures
 reproduce/       Wolfram's lifetime experiments, with STICA and with his own code (Mathematica); extraction of his
                  published rule arrays
-benchmarks/      CPU baselines, scaling and legacy benchmarks, recorded results
+benchmarks/      CPU baselines, scaling, equal-time and legacy benchmarks, recorded results
 examples/        command-line example
 legacy/          the original implementation (superseded) and its known issues
 ```

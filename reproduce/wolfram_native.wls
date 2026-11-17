@@ -2,6 +2,7 @@
 (* Wolfram's lifetime experiments run with Wolfram's own code, in the Wolfram Language.
 
      wolframscript -file reproduce/wolfram_native.wls [phase ...]
+     WOLFRAM_PHASES=phase,... wolfram -script reproduce/wolfram_native.wls        (kernel only, e.g. on a cluster)
 
    phases (default: verify replay detail timing):
      verify    his RuleArray code on every published array in tests/data/wolfram_rule_arrays.json
@@ -14,6 +15,16 @@
                his RuleArray compiled (checked to give runs identical to the interpreted code)
      timing    seconds per candidate and per run on one kernel, his code as published (interpreted) and with his
                RuleArray function compiled by FunctionCompile (his Typed signature; the evolution itself unchanged)
+   equal-time phases (benchmarks/equal_time.py measures STICA and numba the same way):
+     loopcheck      adaptLoop (his AdaptRuleArray step in a loop with a deadline) makes exactly his run
+     latency        one run at a time on one kernel (WOLFRAM_LATENCY_INTERP, _COMPILED runs)
+     first          one run per subkernel started together: seconds to the first solution (WOLFRAM_FIRST_REPEATS)
+     harvest        lifetime-50 runs on every subkernel for WOLFRAM_BUDGET seconds: every solution, hashed
+     anytime        WOLFRAM_SCALE (default 10: 640 x 311, lifetime 500) for WOLFRAM_BUDGET seconds, runs restarted
+                    after each solution; WOLFRAM_MODE interpreted (one kernel) or compiled (subkernels)
+     reach          the same for each scale in WOLFRAM_SCALES, WOLFRAM_REACH_BUDGET seconds each
+     ladder_timing  seconds per mutation at each scale, interpreted and compiled
+   WOLFRAM_OUT sets the results file; WOLFRAM_CODE_FILE loads his code from a saved copy of the file.
 
    His code is not copied into this repository: it is loaded from the "copy code" file attached to figure 3 of the essay
    and only its definitions are evaluated (no plotting, no cloud calls). The file holds notebook boxes; each input cell is
@@ -23,8 +34,13 @@
      systemd-run --user --scope -p MemoryMax=10G -p MemorySwapMax=0 wolframscript -file reproduce/wolfram_native.wls *)
 
 root = DirectoryName[DirectoryName[ExpandFileName[$InputFileName]]];
-phases = If[Length[$ScriptCommandLine] > 1, Rest[$ScriptCommandLine], {"verify", "replay", "detail", "timing"}];
-outFile = FileNameJoin[{root, "reproduce", "results", "wolfram_native.json"}];
+(* phases from the command line (wolframscript), or from WOLFRAM_PHASES, comma-separated (the kernel's -script mode
+   passes no arguments) *)
+phases = Which[Length[$ScriptCommandLine] > 1, Rest[$ScriptCommandLine],
+   StringQ[Environment["WOLFRAM_PHASES"]], StringSplit[Environment["WOLFRAM_PHASES"], ","],
+   True, {"verify", "replay", "detail", "timing"}];
+outFile = Replace[Environment["WOLFRAM_OUT"],
+   $Failed :> FileNameJoin[{root, "reproduce", "results", "wolfram_native.json"}]];
 out = If[FileExistsQ[outFile], Import[outFile, "RawJSON"], <||>];     (* phases run separately accumulate *)
 out["version"] = $Version;
 out["date"] = DateString["ISODateTime"];
@@ -38,7 +54,8 @@ linear[b_] := StringReplace[StringRiffle[Cases[b, _String, {0, Infinity}], " "],
 definitionQ[HoldComplete[e_]] := FreeQ[Unevaluated[e], Alternatives @@ bannedHeads] &&
    MatchQ[Unevaluated[e], HoldPattern[_SetDelayed | _Set | CompoundExpression[(_SetDelayed | _Set | Null) ..]]];
 definitionQ[_] := False;
-codeText = Import[codeURL, "Text"];
+(* WOLFRAM_CODE_FILE: a saved copy of the same file, for hosts without internet (its sha256 is recorded below) *)
+codeText = Import[Replace[Environment["WOLFRAM_CODE_FILE"], $Failed -> codeURL], "Text"];
 boxes = Flatten[Replace[Cases[ToExpression[codeText, InputForm, HoldComplete], Cell[BoxData[b_], "Input", ___] :> b,
      Infinity], l_List :> l, {1}]];
 held = Quiet[Check[ToExpression[linear[#], InputForm, HoldComplete], $Failed]] & /@ boxes;
@@ -76,11 +93,45 @@ summary[res_] := <|"mutations" -> Length[res] - 1, "final_loss" -> ToString[Last
    "distinct_arrays" -> Length[DeleteDuplicates[res[[All, 1]]]],
    "changed_cells" -> Count[Flatten[Last[res][[1]]], 2], "array" -> (StringJoin /@ Map[ToString, Last[res][[1]] - 1, {2}])|>;   (* rows of 0 (first rule) and 1 *)
 
+(* ------------------------------------------------------------------------------------ for the equal-time phases *)
+envNum[name_, default_] := ToExpression[Replace[Environment[name], $Failed -> ToString[default]]];
+(* his lifetime-50 task scaled by s in both directions (s = 10: 640 x 311, lifetime 500), as benchmarks/equal_time.py *)
+scaled[s_] := <|"height" -> 64 s, "width" -> If[s == 1, 31, 31 s + 1], "target" -> 50 s, "scale" -> s|>;
+(* AdaptRuleArray's step, unchanged (MutateRuleArray, then his loss of IndicesToRules, kept if the loss does not
+   rise), in a loop that keeps only the current array, where his NestWhileList keeps every array (1.6 MB each at
+   640 x 311), and that stops at a wall-clock deadline. With restart a run that reaches zero loss is counted and starts
+   again from ruleArray. Records each new best loss and each solution with its time and mutations. The loopcheck phase
+   checks that it makes exactly the run AdaptRuleArray makes. *)
+adaptLoop[ruleArray_, rules_, lossFn_, deadline_, t0_, restart_, maxIters_, opts___] :=
+  Module[{cur = ruleArray, best, best0, m, lo, k = 0, steps = 0, bestEver, events, sols = {}},
+   best0 = best = lossFn[IndicesToRules[ruleArray, rules, opts]];
+   bestEver = best; events = {{AbsoluteTime[] - t0, ToString[best]}};
+   While[AbsoluteTime[] < deadline && k < maxIters,
+    m = MutateRuleArray[cur, Length[rules], opts];
+    lo = lossFn[IndicesToRules[m, rules, opts]];
+    k++; steps++;
+    If[lo <= best, cur = m; best = lo];
+    If[best < bestEver, bestEver = best; AppendTo[events, {AbsoluteTime[] - t0, ToString[best]}]];
+    If[best == 0,
+     AppendTo[sols, {AbsoluteTime[] - t0, steps}];
+     If[restart, cur = ruleArray; best = best0; steps = 0, Break[]]]];
+   <|"mutations" -> k, "events" -> events, "solutions" -> sols, "final" -> cur|>];
+(* lifetime-50 runs (his AdaptRuleArray, compiled loss) one after another until the deadline; a run counts if it ends
+   before the deadline. Solutions are kept as integers (one bit per cell) and hashed after the deadline. *)
+harvestKernel[budget_, seedBase_] := Module[{sols = {}, j = 0, runs = 0, res, t0 = AbsoluteTime[], deadline},
+   deadline = t0 + budget;                  (* each kernel times itself: kernels' clocks can differ by ~0.1 s *)
+   While[AbsoluteTime[] < deadline,
+    j++; res = lifetime50Run[seedBase + j, loss50C];
+    If[AbsoluteTime[] < deadline, runs++;
+     If[Last[Last[res]] === 0,
+      AppendTo[sols, {AbsoluteTime[] - t0, Length[res] - 1, FromDigits[Flatten[res[[-1, 1]]] - 1, 2]}]]]];
+   <|"runs_finished" -> runs, "solutions" -> sols|>];
+
 kernels = ToExpression[Replace[Environment["WOLFRAM_KERNELS"], $Failed -> "8"]];
 startParallel[] := If[Length[Kernels[]] == 0, LaunchKernels[kernels];
    DistributeDefinitions[RuleArray, MetaRuleArray, RuleArrayStates, RuleArrayLifetime, LifetimeLoss,
     LifetimeLossValue, IndicesToRules, MutateRuleArray, AdaptRuleArray, lifetime50Run, andXorRun, summary,
-    compiledLoss, opts1, optsHalf];
+    compiledLoss, opts1, optsHalf, adaptLoop, harvestKernel, scaled];
    $DistributedContexts = None];         (* no automatic re-distribution: it would clear the subkernels' compiled losses *)
 bits[rows_] := Map[ToExpression /@ Characters[#] &, rows];
 data = Import[FileNameJoin[{root, "tests", "data", "wolfram_rule_arrays.json"}], "RawJSON"];
@@ -208,4 +259,141 @@ If[MemberQ[phases, "timing"],
   save[];
   ];
 
-Print["wrote reproduce/results/wolfram_native.json"];
+(* ============================================================ equal-time phases (see benchmarks/equal_time.py) *)
+nullMin[l_List] := If[l === {}, Null, Min[l]];
+kernelInfo[] := <|"version" -> $Version, "cpu" -> $ProcessorType, "processors" -> $ProcessorCount,
+   "machine" -> $MachineName, "slurm_job" -> Replace[Environment["SLURM_JOB_ID"], $Failed -> Null]|>;
+
+(* ------------------------------------------------------------------------------------------------------ loopcheck *)
+If[MemberQ[phases, "loopcheck"],
+  lossCheck = compiledLoss[50, 64, 31, opts1];
+  ref = (SeedRandom[234235]; AdaptRuleArray[ConstantArray[1, {64, 31}], {4, 146}, 10000, lossCheck, opts1]);
+  mine = (SeedRandom[234235];
+    adaptLoop[ConstantArray[1, {64, 31}], {4, 146}, lossCheck, Infinity, AbsoluteTime[], False, 10000, opts1]);
+  out["loopcheck"] = <|"seed" -> 234235, "same_final_array" -> (mine["final"] === ref[[-1, 1]]),
+     "same_mutations" -> (mine["mutations"] == Length[ref] - 1), "mutations" -> mine["mutations"]|>;
+  Print["loopcheck: ", out["loopcheck"]];
+  save[];
+  ];
+
+(* -------------------------------------------------------------------------------------------------------- latency *)
+(* one run at a time on one kernel, his code as published and with RuleArray compiled *)
+If[MemberQ[phases, "latency"],
+  lossLat = compiledLoss[50, 64, 31, opts1];
+  oneRun[seed_, lf_] := Module[{t, res}, {t, res} = AbsoluteTiming[lifetime50Run[seed, lf]];
+     <|"seconds" -> t, "mutations" -> Length[res] - 1, "solved" -> (Last[Last[res]] === 0)|>];
+  oneRun[1, lossLat];
+  out["latency"] = <|"kernels" -> 1, "host" -> kernelInfo[],
+     "interpreted" -> Table[oneRun[5 10^6 + i, Automatic], {i, envNum["WOLFRAM_LATENCY_INTERP", 20]}],
+     "compiled" -> Table[oneRun[6 10^6 + i, lossLat], {i, envNum["WOLFRAM_LATENCY_COMPILED", 200]}]|>;
+  Print["latency: median ", Median[Lookup[out["latency", "interpreted"], "seconds"]], " s interpreted, ",
+   Median[Lookup[out["latency", "compiled"], "seconds"]], " s compiled"];
+  save[];
+  ];
+
+(* ---------------------------------------------------------------------------------------------------------- first *)
+(* one run per subkernel started together (compiled loss): seconds until the first solution reaches the master *)
+If[MemberQ[phases, "first"],
+  startParallel[];
+  ParallelEvaluate[loss50C = compiledLoss[50, 64, 31, opts1];];
+  firstRound[r_] := Module[{t0 = AbsoluteTime[], ends},
+     ends = ParallelTable[Module[{tk = AbsoluteTime[], res},     (* durations on each kernel's own clock *)
+        res = lifetime50Run[7 10^6 + 100 r + i, loss50C];
+        {AbsoluteTime[] - tk, Last[Last[res]] === 0, Length[res] - 1}], {i, 1, Length[Kernels[]]},
+       Method -> "FinestGrained"];
+     <|"seconds" -> nullMin[Cases[ends, {t_, True, _} :> t]], "round_seconds_on_master" -> AbsoluteTime[] - t0,
+      "runs" -> ends|>];
+  firstRound[0];
+  out["first"] = <|"kernels" -> Length[Kernels[]], "loss" -> "compiled", "host" -> kernelInfo[],
+     "rounds" -> Table[firstRound[r], {r, envNum["WOLFRAM_FIRST_REPEATS", 50]}]|>;
+  Print["first: median ", Median[DeleteCases[Lookup[out["first", "rounds"], "seconds"], Null]], " s"];
+  save[];
+  ];
+
+(* -------------------------------------------------------------------------------------------------------- harvest *)
+(* lifetime-50 runs on every subkernel for a fixed budget (compiled loss): every solution, with hashes of its rule
+   array and of its pattern, for distinct-solution counts *)
+If[MemberQ[phases, "harvest"],
+  startParallel[];
+  tCompile = First[AbsoluteTiming[ParallelEvaluate[loss50C = compiledLoss[50, 64, 31, opts1];]]];
+  budget = envNum["WOLFRAM_BUDGET", 3600];
+  t0 = AbsoluteTime[];
+  hv = With[{b = budget}, ParallelEvaluate[harvestKernel[b, 10^7 $KernelID]]];
+  tEnd = AbsoluteTime[] - t0;
+  toArray[n_] := Partition[IntegerDigits[n, 2, 64 31], 31];
+  sols = Flatten[Table[Append[#, k] & /@ hv[[k, "solutions"]], {k, Length[hv]}], 1];
+  out["harvest"] = <|"kernels" -> Length[Kernels[]], "budget" -> budget, "seconds" -> tEnd,
+     "compile_seconds" -> tCompile, "host" -> kernelInfo[], "runs_finished" -> Total[Lookup[hv, "runs_finished"]],
+     "columns" -> {"seconds", "mutations", "hash_array", "hash_pattern", "rule146_cells", "kernel"},
+     "solutions" -> ({#[[1]], #[[2]], Hash[toArray[#[[3]]], "SHA256", "HexString"],
+          Hash[RuleArrayStates[opts1][CenterArray[1, 31], toArray[#[[3]]] /. {0 -> 4, 1 -> 146}, 64], "SHA256",
+           "HexString"], DigitCount[#[[3]], 2, 1], #[[4]]} & /@ SortBy[sols, First])|>;
+  Print["harvest: ", Length[sols], " solutions in ", Round[tEnd], " s on ", Length[Kernels[]], " kernels"];
+  save[];
+  ];
+
+(* ---------------------------------------------------------------------------------------------- anytime and reach *)
+(* runs restarted after each solution for a fixed budget at a scaled size; "interpreted": his code as published on
+   one kernel; "compiled": RuleArray compiled, one run per subkernel *)
+budgetRun[sz_, budget_, mode_, seed_] := Module[{t0, res, tc = 0},
+   If[mode == "interpreted",
+    SeedRandom[seed];
+    t0 = AbsoluteTime[];
+    res = {KeyDrop[adaptLoop[ConstantArray[1, {sz["height"], sz["width"]}], {4, 146},
+        LifetimeLoss[sz["target"]][sz["height"], sz["width"], opts1], t0 + budget, t0, True, Infinity, opts1],
+       "final"]},
+    startParallel[];
+    tc = First[AbsoluteTiming[With[{tg = sz["target"], h = sz["height"], w = sz["width"]},
+        ParallelEvaluate[lossS = compiledLoss[tg, h, w, opts1];]]]];
+    t0 = AbsoluteTime[];
+    res = With[{b = budget, h = sz["height"], w = sz["width"], sd = seed},     (* each kernel times itself *)
+      ParallelEvaluate[SeedRandom[sd + $KernelID]; Module[{tk = AbsoluteTime[]},
+        KeyDrop[adaptLoop[ConstantArray[1, {h, w}], {4, 146}, lossS, tk + b, tk, True, Infinity, opts1], "final"]]]]];
+   <|"setup" -> sz, "mode" -> mode, "kernels" -> Length[res], "budget" -> budget,
+    "seconds" -> AbsoluteTime[] - t0, "compile_seconds" -> tc, "host" -> kernelInfo[],
+    "mutations" -> Total[Lookup[res, "mutations"]],
+    "solutions" -> Total[Length /@ Lookup[res, "solutions"]],
+    "first_solution_s" -> nullMin[Flatten[#[[All, 1]] & /@ Lookup[res, "solutions"]]],
+    "per_kernel" -> res|>];
+If[MemberQ[phases, "anytime"],
+  mode = Replace[Environment["WOLFRAM_MODE"], $Failed -> "compiled"];
+  r = budgetRun[scaled[envNum["WOLFRAM_SCALE", 10]], envNum["WOLFRAM_BUDGET", 3600], mode, 8 10^6];
+  out["anytime_" <> mode] = r;
+  Print["anytime (", mode, "): ", r["solutions"], " solutions, ", r["mutations"], " mutations in ",
+   Round[r["seconds"]], " s; first solution at ", r["first_solution_s"]];
+  save[];
+  ];
+If[MemberQ[phases, "reach"],
+  mode = Replace[Environment["WOLFRAM_MODE"], $Failed -> "compiled"];
+  key = "reach_" <> mode;
+  out[key] = {};
+  Do[r = budgetRun[scaled[s], envNum["WOLFRAM_REACH_BUDGET", 600], mode, 9 10^6 + 1000 s];
+   out[key] = Append[out[key], r];
+   Print["reach (", mode, ") scale ", s, ": ", r["solutions"], " solutions, ", r["mutations"], " mutations, first at ",
+    r["first_solution_s"]];
+   save[],
+   {s, ToExpression /@ StringSplit[Replace[Environment["WOLFRAM_SCALES"], $Failed -> "1,2,4,6,8,10,14,20"], ","]}];
+  ];
+
+(* ------------------------------------------------------------------------------------------------- ladder_timing *)
+(* seconds per mutation (his loop: mutate, IndicesToRules, loss) from the starting array, whose pattern survives every
+   step, at each scaled size; interpreted and compiled, one kernel *)
+If[MemberQ[phases, "ladder_timing"],
+  out["ladder_timing"] = Table[With[{sz = scaled[s]},
+     Module[{ra = ConstantArray[1, {sz["height"], sz["width"]}], lf, lc, per},
+      lf = LifetimeLoss[sz["target"]][sz["height"], sz["width"], opts1];
+      lc = compiledLoss[sz["target"], sz["height"], sz["width"], opts1];
+      per[f_] := Module[{n = 1, t},
+        While[(t = First[AbsoluteTiming[adaptLoop[ra, {4, 146}, f, Infinity, 0, False, n, opts1]]]) < 2 && n < 4096,
+         n *= 4];
+        t/n];
+      <|"setup" -> sz, "interpreted_seconds_per_mutation" -> per[lf],
+       "compiled_seconds_per_mutation" -> per[lc]|>]],
+    {s, ToExpression /@ StringSplit[Replace[Environment["WOLFRAM_SCALES"], $Failed -> "1,2,4,6,8,10,14,20"], ","]}];
+  out["ladder_timing_host"] = kernelInfo[];
+  Print["ladder_timing: ", {#["setup", "scale"], #["interpreted_seconds_per_mutation"],
+      #["compiled_seconds_per_mutation"]} & /@ out["ladder_timing"]];
+  save[];
+  ];
+
+Print["wrote ", outFile];

@@ -208,19 +208,29 @@ def simulate_packed(ic, ra, rules, *, radius: float = 1, neighborhood: str = "al
 
 # ------------------------------------------------------------------------------------------------------- evolution
 
+class PackedState(NamedTuple):
+    """Where every lane of a packed evolution stands, to continue it with another call (`state=`). The arrays are
+    in the backend's own layout: (T, nw, lanes) for "pallas", (lanes, P, T, nw) for "xla"."""
+    arrays: Array           # each lane's current rule array, packed
+    best: Array             # (lanes,) its loss
+    steps: Array            # (lanes,) mutations since the lane's run started (with restart: since its last restart)
+    backend: str
+
+
 class PackedEvolution(NamedTuple):
-    ra: Array               # (runs, T, W) each lane's rule array at the end (with restart: the run in progress)
+    ra: Array | None        # (runs, T, W) each lane's rule array at the end (with restart: the run in progress)
     best: Array             # (runs,) its loss
     initial: Array          # () loss of the starting array
-    solved_at: Array        # (runs,) mutations until the lane's first solution, -1 if none
+    solved_at: Array        # (runs,) mutations (in this call) until the lane's first solution, -1 if none
     solves: Array           # (runs,) solutions found (restart) or 1/0 (no restart)
     solve_steps: Array      # (runs,) total mutations those solutions took
-    last_solution: Array    # (runs, T, W) the lane's most recent solution (meaningful where solves > 0)
+    last_solution: Array | None   # (runs, T, W) the lane's most recent solution (meaningful where solves > 0)
     best_trace: Array | None   # (runs, iters) best loss before any restart, if record_trace
     accepted: Array | None     # (runs, iters), if record_trace
+    state: PackedState | None = None   # pass as `state=` to continue every lane where it stands
 
 
-def _evolve_lane(key, ic_words, planes0, tmask, *, model, objective, iterations, accept_ties, stop_at, restart,
+def _evolve_lane(key, ic_words, planes0, tmask, init, *, model, objective, iterations, accept_ties, stop_at, restart,
                  record_trace):
     T = planes0.shape[1]
     K, width = model.num_rules, model.width
@@ -261,28 +271,30 @@ def _evolve_lane(key, ic_words, planes0, tmask, *, model, objective, iterations,
         return (planes, best, steps, solves, solve_steps, first, last), out
 
     zero = jnp.zeros((), jnp.int32)
-    first0 = jnp.where(best0 <= stop_at, 0, -1).astype(jnp.int32) if stop_at is not None else jnp.int32(-1)
-    carry0 = (planes0, best0, zero, zero, zero, first0, planes0)
+    start, start_best, steps0 = (planes0, best0, zero) if init is None else init
+    first0 = jnp.where(start_best <= stop_at, 0, -1).astype(jnp.int32) if stop_at is not None else jnp.int32(-1)
+    carry0 = (start, start_best, steps0, zero, zero, first0, start)
     xs = (jax.random.split(key, iterations), jnp.arange(iterations, dtype=jnp.int32))
-    (planes, best, _, solves, solve_steps, first, last), out = jax.lax.scan(iterate, carry0, xs)
+    (planes, best, steps, solves, solve_steps, first, last), out = jax.lax.scan(iterate, carry0, xs)
     if not restart:
         solves = (first > 0).astype(jnp.int32)
         solve_steps = jnp.maximum(first, 0)
         last = planes
-    return planes, best, best0, first, solves, solve_steps, last, out
+    return planes, best, best0, first, solves, solve_steps, last, out, steps
 
 
 @partial(jax.jit, static_argnames=("model", "objective", "iterations", "accept_ties", "stop_at", "restart",
                                    "record_trace"))
-def _evolve_batch(keys, ic_words, planes0, tmask, **static):
-    return jax.vmap(lambda k: _evolve_lane(k, ic_words, planes0, tmask, **static))(keys)
+def _evolve_batch(keys, ic_words, planes0, tmask, init, **static):
+    return jax.vmap(lambda k, s: _evolve_lane(k, ic_words, planes0, tmask, s, **static))(keys, init)
 
 
 def evolve_packed_batch(key: Array, num_runs: int, ic, ra, rules, *, objective: Callable, iterations: int,
                         radius: float = 1, neighborhood: str = "alternating", boundary: str = "periodic",
                         accept_ties: bool = True, stop_at: float | None = None, restart: bool = False,
                         record_trace: bool = False, backend: str = "auto",
-                        keep_last_solution: bool = True) -> PackedEvolution:
+                        keep_last_solution: bool = True, state: PackedState | None = None,
+                        unpack: bool = True) -> PackedEvolution:
     """Wolfram's adaptive evolution of a binary rule array on packed words: `num_runs` independent runs in
     parallel from the same start, one point mutation (a cell switched to a different rule) per iteration, kept
     unless the loss increases (`accept_ties=False`: unless it does not decrease).
@@ -298,7 +310,12 @@ def evolve_packed_batch(key: Array, num_runs: int, ic, ra, rules, *, objective: 
 
     `backend`: "pallas" evaluates every candidate with one fused GPU kernel for the whole batch (two rules, radius 1
     or 1/2); "xla" uses the vmapped XLA path, which runs anywhere; "auto" picks "pallas" on a GPU when the model is
-    supported. With `restart`, `keep_last_solution=False` saves one pass over the rule arrays per iteration."""
+    supported. With `restart`, `keep_last_solution=False` saves one pass over the rule arrays per iteration.
+
+    Long runs can be split into calls: the result's `state` passed back as `state=` (same model, `num_runs`, `ra`
+    and backend) continues every lane where it stands, with a fresh `key`; `solved_at`, `solves` and `solve_steps`
+    then count within the call. `unpack=False` skips converting the rule arrays back to cells (`ra` and
+    `last_solution` are None), which matters when a run is split into many short calls."""
     ic = jnp.asarray(ic)
     ra = jnp.asarray(ra)
     if ra.ndim != 2 or ra.shape[1] != ic.shape[-1]:
@@ -312,28 +329,34 @@ def evolve_packed_batch(key: Array, num_runs: int, ic, ra, rules, *, objective: 
     if backend == "auto":
         backend = "pallas" if (jax.default_backend() == "gpu" and np.ndim(rules) == 1
                                and _fused_supported(model.num_rules, radius)) else "xla"
+    if state is not None and state.backend != backend:
+        raise ValueError(f"the state comes from the {state.backend!r} backend, not {backend!r}")
+    init = None if state is None else (state.arrays, state.best, state.steps)
     if backend == "pallas":
         if np.ndim(rules) != 1 or not _fused_supported(model.num_rules, radius):
             raise ValueError("the fused kernel handles two rules, given as rule numbers, with radius 1 or 1/2")
         lanes = -(-num_runs // _BLOCK) * _BLOCK
-        M, best, best0, first, solves, solve_steps, last, out = _evolve_fused(
-            key, pack_cells(ic), pack_cells(ra.astype(jnp.int32) == 1), rules=tuple(int(r) for r in rules),
+        M, best, best0, first, solves, solve_steps, last, out, steps = _evolve_fused(
+            key, pack_cells(ic), pack_cells(ra.astype(jnp.int32) == 1), init, rules=tuple(int(r) for r in rules),
             width=model.width, radius=radius, neighborhood=neighborhood, boundary=boundary, objective=objective,
             num_lanes=lanes, iterations=iterations, accept_ties=accept_ties, stop_at=stop_at, restart=restart,
-            record_trace=record_trace, keep_last=keep_last_solution or not restart)
-        unpack = lambda m: unpack_cells(jnp.moveaxis(m, -1, 0), model.width)[:num_runs]
+            record_trace=record_trace, keep_last=unpack and (keep_last_solution or not restart))
+        cells = lambda m: unpack_cells(jnp.moveaxis(m, -1, 0), model.width)[:num_runs]
         trace, accepted = (o.T[:num_runs] for o in out) if record_trace else (None, None)
-        return PackedEvolution(unpack(M), best[:num_runs], best0[0], first[:num_runs], solves[:num_runs],
-                               solve_steps[:num_runs], unpack(last) if last.ndim == 3 else None, trace, accepted)
+        return PackedEvolution(cells(M) if unpack else None, best[:num_runs], best0[0], first[:num_runs],
+                               solves[:num_runs], solve_steps[:num_runs],
+                               cells(last) if unpack and last.ndim == 3 else None, trace, accepted,
+                               PackedState(M, best, steps, "pallas"))
     if backend != "xla":
         raise ValueError(f"backend must be 'auto', 'pallas' or 'xla', got {backend!r}")
-    planes, best, best0, first, solves, solve_steps, last, out = _evolve_batch(
-        jax.random.split(key, num_runs), pack_cells(ic), pack_rule_array(ra, model.num_rules), tmask, model=model,
-        objective=objective, iterations=iterations, accept_ties=accept_ties, stop_at=stop_at, restart=restart,
-        record_trace=record_trace)
-    unpack = jax.vmap(lambda pl: unpack_rule_array(pl, model.width))
+    planes, best, best0, first, solves, solve_steps, last, out, steps = _evolve_batch(
+        jax.random.split(key, num_runs), pack_cells(ic), pack_rule_array(ra, model.num_rules), tmask, init,
+        model=model, objective=objective, iterations=iterations, accept_ties=accept_ties, stop_at=stop_at,
+        restart=restart, record_trace=record_trace)
+    cells = jax.vmap(lambda pl: unpack_rule_array(pl, model.width))
     trace, accepted = out if record_trace else (None, None)
-    return PackedEvolution(unpack(planes), best, best0[0], first, solves, solve_steps, unpack(last), trace, accepted)
+    return PackedEvolution(cells(planes) if unpack else None, best, best0[0], first, solves, solve_steps,
+                           cells(last) if unpack else None, trace, accepted, PackedState(planes, best, steps, "xla"))
 
 
 # ------------------------------------------------------------------------------------- fused GPU kernel (Pallas)
@@ -442,10 +465,11 @@ def fused_rollout(ic_words: Array, masks: Array, *, rules: tuple, width: int, ra
 
 @partial(jax.jit, static_argnames=("rules", "width", "radius", "neighborhood", "boundary", "objective", "num_lanes",
                                    "iterations", "accept_ties", "stop_at", "restart", "record_trace", "keep_last"))
-def _evolve_fused(key, ic_words, masks0, *, rules, width, radius, neighborhood, boundary, objective, num_lanes,
+def _evolve_fused(key, ic_words, masks0, init, *, rules, width, radius, neighborhood, boundary, objective, num_lanes,
                   iterations, accept_ties, stop_at, restart, record_trace, keep_last):
     """All runs advance together in one lane-major array (T, nw, lanes); every candidate evaluation is one fused
-    kernel launch for the whole batch. Two rules, so a mutation flips one bit."""
+    kernel launch for the whole batch. Two rules, so a mutation flips one bit. `init`: None, or (arrays, best, steps)
+    of every lane to continue from."""
     T, nw = masks0.shape
     lanes = jnp.arange(num_lanes)
     ic_b = jnp.broadcast_to(ic_words[:, None], (nw, num_lanes))
@@ -492,12 +516,13 @@ def _evolve_fused(key, ic_words, masks0, *, rules, width, radius, neighborhood, 
         return (M, best, steps, solves, solve_steps, first, last), out
 
     zero = jnp.zeros(num_lanes, jnp.int32)
-    first0 = jnp.where(best0 <= stop_at, 0, -1).astype(jnp.int32) if stop_at is not None else zero - 1
-    carry0 = (M0, best0, zero, zero, zero, first0, M0 if keep_last else jnp.zeros((), _U))
+    start, start_best, steps0 = (M0, best0, zero) if init is None else init
+    first0 = jnp.where(start_best <= stop_at, 0, -1).astype(jnp.int32) if stop_at is not None else zero - 1
+    carry0 = (start, start_best, steps0, zero, zero, first0, start if keep_last else jnp.zeros((), _U))
     xs = (jax.random.split(key, iterations), jnp.arange(iterations, dtype=jnp.int32))
-    (M, best, _, solves, solve_steps, first, last), out = jax.lax.scan(iterate, carry0, xs)
+    (M, best, steps, solves, solve_steps, first, last), out = jax.lax.scan(iterate, carry0, xs)
     if not restart:
         solves = (first > 0).astype(jnp.int32)
         solve_steps = jnp.maximum(first, 0)
         last = M
-    return M, best, best0, first, solves, solve_steps, last, out
+    return M, best, best0, first, solves, solve_steps, last, out, steps
