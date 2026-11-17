@@ -366,8 +366,9 @@ If[MemberQ[phases, "anytime"],
 If[MemberQ[phases, "reach"],
   mode = Replace[Environment["WOLFRAM_MODE"], $Failed -> "compiled"];
   key = "reach_" <> mode;
-  out[key] = {};
-  Do[r = budgetRun[scaled[s], envNum["WOLFRAM_REACH_BUDGET", 600], mode, 9 10^6 + 1000 s];
+  If[!KeyExistsQ[out, key], out[key] = {}];          (* sizes already saved are kept: a requeued job resumes *)
+  Do[If[MemberQ[#["setup", "scale"] & /@ out[key], s], Print["reach scale ", s, ": done earlier"]; Continue[]];
+   r = budgetRun[scaled[s], envNum["WOLFRAM_REACH_BUDGET", 600], mode, 9 10^6 + 1000 s];
    out[key] = Append[out[key], r];
    Print["reach (", mode, ") scale ", s, ": ", r["solutions"], " solutions, ", r["mutations"], " mutations, first at ",
     r["first_solution_s"]];
