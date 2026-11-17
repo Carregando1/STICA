@@ -1,0 +1,329 @@
+{
+ "mathematica": "15.0.1 for Linux x86 (64-bit) (July 2, 2026)",
+ "code": {
+  "url": "https://content.wolfram.com/sites/43/2024/08/sw08202024arraysBimg3_copy.txt",
+  "sha256": "1b2bff4bf21d0124d3609e4979584724054610217bc08bae1c86238918220e11",
+  "cells": 29,
+  "definitions_loaded": 17,
+  "functions": [
+   "RuleArray",
+   "MetaRuleArray",
+   "RuleArrayStates",
+   "RuleArrayLifetime",
+   "LifetimeLoss",
+   "LifetimeLossValue",
+   "IndicesToRules",
+   "MutateRuleArray",
+   "AdaptRuleArray"
+  ]
+ },
+ "published": {
+  "wolfram_code": {
+   "lifetime50_solutions": {
+    "arrays": 12,
+    "cells": 23808,
+    "lifetimes": [
+     50,
+     50,
+     50,
+     50,
+     50,
+     50,
+     50,
+     50,
+     50,
+     50,
+     50,
+     50
+    ],
+    "all_states_equal": true
+   },
+   "examples": {
+    "arrays": 8,
+    "cells": 3720,
+    "lifetimes": [
+     16,
+     16,
+     16,
+     5,
+     16,
+     7,
+     16,
+     16
+    ],
+    "all_states_equal": true
+   },
+   "simple_solutions": {
+    "arrays": 4,
+    "cells": 660,
+    "lifetimes": [
+     3,
+     5,
+     7,
+     9
+    ],
+    "all_states_equal": true
+   }
+  },
+  "stica": {
+   "arrays": 12,
+   "cells_compared": 24180,
+   "cells_mismatched": 0,
+   "lifetimes": [
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50
+   ],
+   "source": "https://content.wolfram.com/sites/43/2024/08/sw08202024arraysBimg5.png"
+  }
+ },
+ "cross_check": {
+  "arrays": 102,
+  "losses_equal": 102,
+  "unsolved_arrays": 0
+ },
+ "replay": {
+  "figure5": {
+   "runs_shown": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    90,
+    97,
+    89,
+    20,
+    13
+   ],
+   "matches_published_in_order": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "published_found_among_100": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    90,
+    97,
+    89,
+    20,
+    13
+   ]
+  },
+  "figure5_reproduced": 12,
+  "figure_lifetimes": {
+   "replay_lifetime50_seed234241": {
+    "essay": [
+     "inf",
+     6,
+     13,
+     16,
+     25,
+     27,
+     30,
+     35,
+     49,
+     50
+    ],
+    "replayed": [
+     "inf",
+     6,
+     13,
+     16,
+     25,
+     27,
+     30,
+     35,
+     49,
+     50
+    ],
+    "equal": true
+   },
+   "replay_andxor_seed234234": {
+    "essay": [
+     1,
+     15,
+     19,
+     20,
+     21,
+     23,
+     24,
+     28,
+     30
+    ],
+    "replayed": [
+     1,
+     15,
+     19,
+     20,
+     21,
+     23,
+     24,
+     28,
+     30
+    ],
+    "equal": true
+   }
+  },
+  "lifetime50_100_seeds": {
+   "runs": 100,
+   "solved": 100,
+   "solved_fraction": 1.0,
+   "median": 1568.0,
+   "q25": 976.5,
+   "q75": 2718.25,
+   "mean": 1814.77
+  },
+  "seed234241": {
+   "mutations": 1868,
+   "final_loss": "0",
+   "solved": true,
+   "accepted": 1798,
+   "loss_changes": 9,
+   "loss_trajectory": [
+    "Infinity",
+    "44",
+    "37",
+    "34",
+    "25",
+    "23",
+    "20",
+    "15",
+    "1",
+    "0"
+   ],
+   "distinct_arrays": 1797,
+   "changed_cells": 866
+  },
+  "andxor_seed234234": {
+   "mutations": 1703,
+   "final_loss": "0",
+   "solved": true,
+   "accepted": 1678,
+   "loss_changes": 8,
+   "loss_trajectory": [
+    "29",
+    "15",
+    "11",
+    "10",
+    "9",
+    "7",
+    "6",
+    "2",
+    "0"
+   ],
+   "distinct_arrays": 1678,
+   "changed_cells": 424
+  },
+  "andxor_detail": {
+   "mutations": 1703,
+   "accepted": 1678,
+   "accepted_changing_pattern": 15,
+   "accepted_changing_lifetime": 8,
+   "distinct_cells_flipped": 731,
+   "cells_flipped_odd_times": 424,
+   "cells": 840
+  }
+ },
+ "distribution": {
+  "rules_4_146": {
+   "wolfram": {
+    "runs": 4096,
+    "solved": 4094,
+    "solved_fraction": 0.99951171875,
+    "median": 1970.0,
+    "q25": 1115.25,
+    "q75": 2966.5,
+    "mean": 2172.3194919394236
+   },
+   "stica": {
+    "runs": 4096,
+    "solved": 4093,
+    "solved_fraction": 0.999267578125,
+    "median": 1992.0,
+    "q25": 1108.0,
+    "q75": 2921.0,
+    "mean": 2145.678475445883
+   },
+   "ks_statistic": 0.015625,
+   "ks_pvalue": 0.6994395019117133,
+   "mannwhitney_pvalue": 0.8345321930830707,
+   "solved_fisher_pvalue": 1.0,
+   "wolfram_seconds": 250.281876,
+   "wolfram_kernels": 8,
+   "stica_seconds": 2.3830172819999973
+  },
+  "and_xor": {
+   "wolfram": {
+    "runs": 4096,
+    "solved": 4095,
+    "solved_fraction": 0.999755859375,
+    "median": 1820.0,
+    "q25": 1427.0,
+    "q75": 2423.5,
+    "mean": 2016.3714285714286
+   },
+   "stica": {
+    "runs": 4096,
+    "solved": 4096,
+    "solved_fraction": 1.0,
+    "median": 1830.5,
+    "q25": 1418.0,
+    "q75": 2400.0,
+    "mean": 1999.913818359375
+   },
+   "ks_statistic": 0.01953125,
+   "ks_pvalue": 0.4154049284561651,
+   "mannwhitney_pvalue": 0.6468455077113809,
+   "solved_fisher_pvalue": 1.0,
+   "wolfram_seconds": 202.207915,
+   "wolfram_kernels": 8,
+   "stica_seconds": 1.5835814630000016
+  }
+ },
+ "timing": {
+  "interpreted": {
+   "candidate_seconds_full_64_steps": 0.015258560000000001,
+   "candidate_seconds_lifetime_50": 0.011035745,
+   "run_seconds": 2.36286,
+   "run_mutations": 188,
+   "candidates_per_second": 79.56459544788942
+  },
+  "compiled": {
+   "compile_seconds": 8.638163,
+   "losses_equal_interpreted": true,
+   "run_identical_to_interpreted": true,
+   "candidate_seconds_full_64_steps": 8.252e-05,
+   "candidate_seconds_lifetime_50": 8.482499999999999e-05,
+   "run_seconds": 0.040572,
+   "candidates_per_second": 4633.737552992212
+  },
+  "cpu": "x86-64, 10 cores"
+ }
+}

@@ -104,7 +104,8 @@ code that Wolfram published with the figures of [1]:
   (`tests/data/wolfram_rule_arrays.json`). The simulator reproduces all of them cell for cell: 24,180 cells of the
   lifetime-50 arrays alone, with no mismatch.
 - **His code.** A line-by-line port of Wolfram's `RuleArray` function, for radius 1 and all three radius-1/2
-  neighbourhoods.
+  neighbourhoods; and his code itself, run in Mathematica, which replays his published runs from his seeds (see
+  [Reproducing Wolfram's lifetime experiments](#with-wolframs-own-code-mathematica)).
 - **Known patterns.** Rule 90 grown from one cell is Pascal's triangle mod 2, and the centre column of rule 30 is
   OEIS A051023.
 
@@ -207,22 +208,53 @@ The script reruns the two lifetime experiments of [1] with the settings in the c
 - switches one cell's rule per mutation and keeps mutations that do not increase the loss;
 - stops at zero loss or after 10,000 mutations.
 
-Wolfram's random seeds drive Mathematica's generator, so single runs cannot be matched; the comparison is with the
-distribution over many runs.
+Wolfram's random seeds drive Mathematica's generator and STICA uses JAX's, so STICA's runs are not his runs; the
+comparison is with the distribution over many runs. To compare with his code rather than with our reading of it,
+`reproduce/wolfram_native.wls` also runs his code itself in Mathematica (below).
 
 | Experiment | Runs | Solved | Mutations to solution, median (IQR) | Time, one GPU |
 |---|---:|---:|---:|---:|
-| Rules 4/146, 64 × 31, lifetime 50 | 4,096 | 99.9% | 1,992 (1,108–2,921) | 2.3 s |
-| And/Xor (radius 1/2), 40 × 21, lifetime 30 | 4,096 | 100% | 1,830 (1,418–2,400) | 1.6 s |
+| Rules 4/146, 64 × 31, lifetime 50 | 4,096 | 99.9% | 1,992 (1,108–2,921) | 2.4 s |
+| And/Xor (radius 1/2), 40 × 21, lifetime 30 | 4,096 | 100% | 1,831 (1,418–2,400) | 1.6 s |
 | Rules 4/146, 640 × 311, lifetime 500 (100× the cells) | 4,096 | 6% within 100,000 | — | 189 s |
 
-How these compare with Wolfram's runs:
-- His one And/Xor run took 1,705 mutations, inside the interquartile range of ours.
-- He writes that only 780 of those mutations "contribute" to the final array. He does not say how they were
-  counted, so we do not compare against that number.
-- Compilation (about 3 s per setup) is not included in the times, except for the scale-up, which runs on the
-  bit-packed engine and is timed in a single call.
-- The GPU is an NVIDIA RTX 4000 Ada.
+Compilation (about 3 s per setup) is not included in the times, except for the scale-up, which runs on the bit-packed
+engine and is timed in a single call. The GPU is an NVIDIA RTX 4000 Ada.
+
+### With Wolfram's own code (Mathematica)
+
+```bash
+wolframscript -file reproduce/wolfram_native.wls verify replay detail timing sample   # Mathematica 15; ~13 min
+JAX_PLATFORMS=cpu python reproduce/compare_wolfram.py      # writes reproduce/results/wolfram_compare.json
+```
+
+`wolfram_native.wls` loads the code attached to the essay's figures from the essay itself (it is not copied into this
+repository), evaluates only its definitions, and calls them exactly as his figure code does. Parallel phases use 8
+Mathematica kernels; run it under a memory cap (the script's header shows how).
+- **Published arrays.** His code reproduces the same 24 published arrays as STICA (28,188 cells, every state equal).
+- **His runs, replayed.** With his seeds (`SeedRandom[234234 + i]`, i = 1..100) his code produces the 12 lifetime-50
+  arrays of his figure exactly; they are runs 1–7, 90, 97, 89, 20 and 13 of the 100. The two runs his figures show
+  step by step (`SeedRandom[234241]`, rules 4/146; `SeedRandom[234234]`, And/Xor) pass through the same lifetimes as
+  in the figures. STICA's loss equals his on all 102 final arrays.
+- **The And/Xor run.** The run in his figure takes 1,703 mutations (his text says 1,705). 1,678 of them are accepted,
+  15 change the pattern and 8 change its lifetime; 731 cells are flipped at some point and 424 end up changed. None of
+  these counts is the "780 of them [that] actually contribute" in his text.
+- **Distributions.** 4,096 runs of each experiment with his code, against STICA's 4,096 above. Runs that do not reach
+  the target within 10,000 mutations are censored at 10,001 for the Kolmogorov–Smirnov test.
+
+| Experiment | Implementation | Solved | Mutations to solution, median (IQR) | KS test |
+|---|---|---:|---:|---|
+| Rules 4/146, lifetime 50 | Wolfram's code | 99.95% | 1,970 (1,115–2,967) | D = 0.016, p = 0.70 |
+| | STICA | 99.93% | 1,992 (1,108–2,921) | |
+| And/Xor, lifetime 30 | Wolfram's code | 99.98% | 1,820 (1,427–2,424) | D = 0.020, p = 0.42 |
+| | STICA | 100% | 1,831 (1,418–2,400) | |
+
+- **Speed of his code**, on one kernel of the same workstation's CPU. As published (interpreted), 15 ms per candidate
+  array and 80 candidates per second over a run. With his `RuleArray` compiled by `FunctionCompile` (it already has a
+  `Typed` signature), 83 µs per candidate and 4,600 candidates per second, his evolution loop still interpreted.
+  Compiled runs are identical to interpreted ones, mutation for mutation, and the distribution sample uses them:
+  4,096 runs took 250 s (rules 4/146) and 202 s (And/Xor) on 8 kernels, against 2.4 s and 1.6 s for STICA on the
+  GPU. His code is written to be read, not to be fast; these numbers describe it, not the best Mathematica can do.
 
 ## Tests
 
@@ -349,7 +381,8 @@ src/stica/       rules.py (2D indexing), ca.py (CAX model, simulate), rulearray.
                  packed.py (bit-packed binary rule arrays, fused GPU kernel), optimize.py (the shared evolution
                  loop), objectives.py, export.py
 tests/           pytest suite, NumPy references, data read off Wolfram's figures
-reproduce/       Wolfram's lifetime experiments; extraction of his published rule arrays
+reproduce/       Wolfram's lifetime experiments, with STICA and with his own code (Mathematica); extraction of his
+                 published rule arrays
 benchmarks/      CPU baselines, scaling and legacy benchmarks, recorded results
 examples/        command-line example
 legacy/          the original implementation (superseded) and its known issues
