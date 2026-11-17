@@ -176,10 +176,12 @@ def suite_grid2d(rec, args):
                 if nbytes > args.max_bytes or 4 * (G + 1) * G * G > args.max_bytes:
                     break
                 key = jax.random.PRNGKey(G * 10 + n)
-                # a random block tiled over time (the generator works in 32-bit words: 4x the memory)
-                tb = max(1, min(Ts, int(2 ** 26 // max(1, Hs * Ws * R))))
-                block = (jax.random.bits(key, (tb, Hs, Ws, R), jnp.uint8) % n).astype(jnp.int8)
-                srt = jnp.tile(block, (-(-Ts // tb), 1, 1, 1))[:Ts]
+                # a random block of at most 64 x 64 cells tiled over time and space (the generator works in 32-bit
+                # words, 4x the memory of the tensor); the values do not change the work per step
+                hb, wb = min(Hs, 64), min(Ws, 64)
+                tb = max(1, min(Ts, int(2 ** 26 // max(1, hb * wb * R))))
+                block = (jax.random.bits(key, (tb, hb, wb, R), jnp.uint8) % n).astype(jnp.int8)
+                srt = jnp.tile(block, (-(-Ts // tb), -(-Hs // hb), -(-Ws // wb), 1))[:Ts, :Hs, :Ws]
                 del block
                 ic = (jax.random.bits(jax.random.fold_in(key, 1), (G, G), jnp.uint8) % n).astype(jnp.int32)
                 fn = lambda: stica.simulate(ic, srt, n, num_steps=G)
