@@ -22,8 +22,8 @@ import numpy as np
 
 def load(run: Path) -> dict:
     d = {}
-    for p in run.glob("*.json"):
-        if p.name == "summary.json":
+    for p in sorted(run.rglob("*.json")):                  # the run directory and its per-GPU subdirectories
+        if p.name == "summary.json" or ".partial" in p.name:
             continue
         try:
             d[p.stem] = json.loads(p.read_text())
@@ -74,7 +74,7 @@ def gpu_energy(run: Path, start: float, end: float) -> float | None:
     from zoneinfo import ZoneInfo
     tz = ZoneInfo("America/New_York")
     total = None
-    for f in run.glob("power_gpu_*.csv"):
+    for f in run.rglob("power_gpu_*.csv"):
         rows = list(csv.reader(open(f)))
         pts = []
         for r in rows[1:]:
@@ -156,8 +156,8 @@ def summarise(run: Path) -> dict:
         c = d["stica_census"]["result"]
         S["census"] = dict(runs=c["runs"], solved=c["solved"], quantiles=c["quantiles"],
                            distinct_curves=c["distinct_curves"])
-        npz = run / "stica_census.npz"
-        if npz.exists():
+        npz = next(run.rglob("stica_census.npz"), None)
+        if npz is not None:
             z = np.load(npz)
             m = z["mutations"][z["mutations"] > 0]
             ms = np.sort(m)
