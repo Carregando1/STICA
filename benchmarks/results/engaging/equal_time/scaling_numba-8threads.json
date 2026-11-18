@@ -1,0 +1,35 @@
+{
+ "impl": "numba-par",
+ "tag": "numba-8threads",
+ "date": "2026-11-17T17:57:36",
+ "python": "3.12.13",
+ "platform": "Linux-6.12.0-211.47.1.el10_2.x86_64-x86_64-with-glibc2.28",
+ "argv": [
+  "--impl",
+  "numba-par",
+  "--tag",
+  "numba-8threads",
+  "--suites",
+  "evo1d,evo1d_large",
+  "--out",
+  "~/stica_equal_time/runs/et_20261117"
+ ],
+ "timing": {
+  "warmup": 1.0,
+  "min_rep": 0.2,
+  "reps": 7,
+  "max_call": 20.0
+ },
+ "cpu": "INTEL(R) XEON(R) PLATINUM 8580",
+ "logical_cpus": 240,
+ "numba_threads": 8,
+ "jax": "0.6.2",
+ "jaxlib": "0.6.2",
+ "numpy": "2.2.6",
+ "numba": "0.68.1",
+ "stica": "0.1.0",
+ "env": {
+  "JAX_PLATFORMS": "cpu"
+ },
+ "git_commit": "96203f6"
+}

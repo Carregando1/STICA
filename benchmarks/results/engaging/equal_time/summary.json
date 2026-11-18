@@ -1,0 +1,674 @@
+{
+ "run": "benchmarks/results/engaging/equal_time",
+ "wolfram_size_rates": {
+  "wolfram_interpreted_1kernel": {
+   "solutions_per_s": 0.05003410324477164,
+   "median_run_s": 19.3648445,
+   "source": "latency",
+   "per_hour": 180.12277168117788
+  },
+  "wolfram_compiled_1kernel": {
+   "solutions_per_s": 2.143634164306686,
+   "median_run_s": 0.414547,
+   "source": "latency",
+   "per_hour": 7717.0829915040695
+  },
+  "wolfram_compiled_8kernels": {
+   "solutions_per_s": 11.520013940516494,
+   "source": "harvest",
+   "per_hour": 41472.05018585938
+  },
+  "numba_latency_numba, 1 thread": {
+   "solutions_per_s": 1104.3163405296957,
+   "median_run_s": 0.0007739439606666565,
+   "source": "latency",
+   "per_hour": 3975538.8259069044
+  },
+  "numba_batch": {
+   "solutions_per_s": 5485.089402412824,
+   "lanes": 8,
+   "candidates_per_s": 11956371.213085145,
+   "source": "reach scale 1",
+   "per_hour": 19746321.848686166
+  },
+  "stica_latency_pallas": {
+   "solutions_per_s": 6.778288050093418,
+   "median_run_s": 0.11479386407881975,
+   "source": "latency",
+   "per_hour": 24401.836980336306
+  },
+  "stica_latency_xla": {
+   "solutions_per_s": 1.444335989389826,
+   "median_run_s": 0.6916104885749519,
+   "source": "latency",
+   "per_hour": 5199.609561803373
+  },
+  "stica_batch": {
+   "solutions_per_s": 208359.18572000618,
+   "lanes": 32768,
+   "candidates_per_s": 454086827.88078094,
+   "source": "reach scale 1",
+   "per_hour": 750093068.5920223
+  }
+ },
+ "first_solution": {
+  "wolfram_compiled_8kernels": 0.1761885,
+  "numba_8runs": {
+   "median_s": 0.00038373332063201815,
+   "median_detected_s": 0.00044126948341727257
+  },
+  "stica_128runs": {
+   "median_s": 0.0014025057316757739,
+   "median_detected_s": 0.004467749036848545
+  },
+  "stica_1024runs": {
+   "median_s": 0.0002827269199769944,
+   "median_detected_s": 0.0043737818486988544
+  },
+  "stica_8192runs": {
+   "median_s": 0.0002808464923873544,
+   "median_detected_s": 0.00449354387819767
+  },
+  "stica_32768runs": {
+   "median_s": 0.0003018543648067862,
+   "median_detected_s": 0.004829669836908579
+  }
+ },
+ "redo": {
+  "wolfram_interpreted_8kernels_100runs": 374.234742,
+  "wolfram_compiled_8kernels_10000runs": {
+   "lifetime50": 913.000359,
+   "andxor": 731.514623
+  },
+  "numba": {
+   "lifetime50_his_100_runs": 0.023404979147017002,
+   "lifetime50_10000_runs": 1.829630110412836,
+   "andxor_10000_runs": "not available: the packed CPU baseline handles radius 1 only"
+  },
+  "stica": {
+   "lifetime50_his_100_runs": 0.4039760250598192,
+   "lifetime50_10000_runs": 0.5189572889357805,
+   "andxor_10000_runs": 0.456059399060905
+  }
+ },
+ "census": {
+  "runs": 16777216,
+  "solved": 16764767,
+  "quantiles": {
+   "0.0001": 1.0,
+   "0.001": 1.0,
+   "0.01": 9.0,
+   "0.1": 427.0,
+   "0.5": 1984.0,
+   "0.9": 4073.0,
+   "0.99": 6786.0,
+   "0.999": 8974.0
+  },
+  "distinct_curves": {
+   "hash_array": [
+    [
+     64,
+     64
+    ],
+    [
+     128,
+     128
+    ],
+    [
+     256,
+     256
+    ],
+    [
+     512,
+     512
+    ],
+    [
+     1024,
+     1024
+    ],
+    [
+     2048,
+     2048
+    ],
+    [
+     4096,
+     4094
+    ],
+    [
+     8192,
+     8181
+    ],
+    [
+     16384,
+     16360
+    ],
+    [
+     32768,
+     32713
+    ],
+    [
+     65536,
+     65438
+    ],
+    [
+     131072,
+     130869
+    ],
+    [
+     262144,
+     261768
+    ],
+    [
+     524288,
+     523469
+    ],
+    [
+     1048576,
+     1046832
+    ],
+    [
+     2097152,
+     2093345
+    ],
+    [
+     4194304,
+     4185707
+    ],
+    [
+     8388608,
+     8368961
+    ],
+    [
+     16764767,
+     16721128
+    ]
+   ],
+   "hash_pattern": [
+    [
+     64,
+     60
+    ],
+    [
+     128,
+     120
+    ],
+    [
+     256,
+     237
+    ],
+    [
+     512,
+     477
+    ],
+    [
+     1024,
+     941
+    ],
+    [
+     2048,
+     1847
+    ],
+    [
+     4096,
+     3658
+    ],
+    [
+     8192,
+     7273
+    ],
+    [
+     16384,
+     14237
+    ],
+    [
+     32768,
+     28163
+    ],
+    [
+     65536,
+     55496
+    ],
+    [
+     131072,
+     109449
+    ],
+    [
+     262144,
+     216033
+    ],
+    [
+     524288,
+     425996
+    ],
+    [
+     1048576,
+     841679
+    ],
+    [
+     2097152,
+     1662502
+    ],
+    [
+     4194304,
+     3285947
+    ],
+    [
+     8388608,
+     6494277
+    ],
+    [
+     16764767,
+     12826222
+    ]
+   ]
+  }
+ },
+ "precision_per_hour": {
+  "wolfram_interpreted_1kernel": {
+   "solutions_per_hour": 180,
+   "median_ci95_halfwidth": 242.5,
+   "rarest_detectable_p": 0.016666666666666666,
+   "ks_detectable_D": 0.14335658726096653
+  },
+  "wolfram_compiled_1kernel": {
+   "solutions_per_hour": 7717,
+   "median_ci95_halfwidth": 36.5,
+   "rarest_detectable_p": 0.0003887521057405728,
+   "ks_detectable_D": 0.021894228992708917
+  },
+  "wolfram_compiled_8kernels": {
+   "solutions_per_hour": 41472,
+   "median_ci95_halfwidth": 16.0,
+   "rarest_detectable_p": 7.233796296296296e-05,
+   "ks_detectable_D": 0.009444444444444445
+  },
+  "numba_latency_numba, 1 thread": {
+   "solutions_per_hour": 3975538,
+   "median_ci95_halfwidth": 1.5,
+   "rarest_detectable_p": 7.546148470974243e-07,
+   "ks_detectable_D": 0.0009646193104679158
+  },
+  "numba_batch": {
+   "solutions_per_hour": 19746321,
+   "median_ci95_halfwidth": 1.0,
+   "rarest_detectable_p": 1.5192703491450383e-07,
+   "ks_detectable_D": 0.00043282347731907694
+  },
+  "stica_latency_pallas": {
+   "solutions_per_hour": 24401,
+   "median_ci95_halfwidth": 20.5,
+   "rarest_detectable_p": 0.0001229457809106184,
+   "ks_detectable_D": 0.0123126091568029
+  },
+  "stica_latency_xla": {
+   "solutions_per_hour": 5199,
+   "median_ci95_halfwidth": 44.5,
+   "rarest_detectable_p": 0.0005770340450086555,
+   "ks_detectable_D": 0.02667435934435926
+  },
+  "stica_batch": {
+   "solutions_per_hour": 750093068,
+   "median_ci95_halfwidth": 0.0,
+   "rarest_detectable_p": 3.999503698919665e-09,
+   "ks_detectable_D": 7.02257409668839e-05
+  }
+ },
+ "census_tail": {
+  "P(mutations<=1)": 0.0015189593747410865,
+  "P(mutations<=2)": 0.0029189191833086615,
+  "P(mutations<=5)": 0.0065487936694855345,
+  "P(mutations<=10)": 0.011108654238976301,
+  "P(mutations<=100)": 0.03883394263696
+ },
+ "harvest_distinct": {
+  "solutions": 41484,
+  "distinct_arrays": 41423,
+  "distinct_patterns": 35455,
+  "median_mutations": 1966.0
+ },
+ "anytime": {
+  "numba": {
+   "lanes": 8,
+   "solutions": 2614,
+   "seconds": 3600.4054018827155,
+   "first_solution_s": 0.7014100044452789,
+   "candidates_per_s": 346136.7365320369,
+   "best_loss": 0.0,
+   "best_at": {
+    "1": 0.0,
+    "10": 0.0,
+    "60": 0.0,
+    "600": 0.0,
+    "3600": 0.0
+   },
+   "solutions_at": {
+    "1": 1,
+    "10": 7,
+    "60": 47,
+    "600": 448,
+    "3600": 2614
+   }
+  },
+  "stica": {
+   "lanes": 32768,
+   "solutions": 175713,
+   "seconds": 3600.283474578522,
+   "first_solution_s": 0.0058693787577794865,
+   "candidates_per_s": 24823664.65392357,
+   "best_loss": 0.0,
+   "best_at": {
+    "1": 0.0,
+    "10": 0.0,
+    "60": 0.0,
+    "600": 0.0,
+    "3600": 0.0
+   },
+   "solutions_at": {
+    "1": 93,
+    "10": 344,
+    "60": 1161,
+    "600": 18903,
+    "3600": 175668
+   },
+   "gpu_joules": 1520199.1422286916
+  },
+  "wolfram_interpreted": {
+   "kernels": 1,
+   "solutions": 0,
+   "seconds": 3600.2768,
+   "first_solution_s": null,
+   "mutations": 2525,
+   "candidates_per_s": 0.7013349640227662,
+   "best_at": {
+    "1": null,
+    "10": null,
+    "60": null,
+    "600": 26.0,
+    "3600": 9.0
+   },
+   "solutions_at": {
+    "1": 0,
+    "10": 0,
+    "60": 0,
+    "600": 0,
+    "3600": 0
+   }
+  },
+  "wolfram_compiled": {
+   "kernels": 8,
+   "solutions": 7,
+   "seconds": 3600.007465,
+   "first_solution_s": 409.503272,
+   "mutations": 5151113,
+   "candidates_per_s": 1430.8617551713883,
+   "best_at": {
+    "1": 74.0,
+    "10": 2.0,
+    "60": 2.0,
+    "600": 0.0,
+    "3600": 0.0
+   },
+   "solutions_at": {
+    "1": 0,
+    "10": 0,
+    "60": 0,
+    "600": 2,
+    "3600": 7
+   }
+  }
+ },
+ "reach": {
+  "numba": {
+   "1": {
+    "lanes": 8,
+    "solutions": 3294185,
+    "seconds": 600.5708855995908,
+    "first_solution_s": 0.0008401284245707075,
+    "candidates_per_s": 11956371.213085145,
+    "best_loss": 0.0
+   },
+   "2": {
+    "lanes": 8,
+    "solutions": 394022,
+    "seconds": 600.1913288841024,
+    "first_solution_s": 0.0014689565628813739,
+    "candidates_per_s": 7016231.3471429115,
+    "best_loss": 0.0
+   },
+   "4": {
+    "lanes": 8,
+    "solutions": 23716,
+    "seconds": 600.8736650506034,
+    "first_solution_s": 0.017434827235334183,
+    "candidates_per_s": 2087122.4168134984,
+    "best_loss": 0.0
+   },
+   "6": {
+    "lanes": 8,
+    "solutions": 3914,
+    "seconds": 600.3025174438953,
+    "first_solution_s": 0.26650628858948266,
+    "candidates_per_s": 901320.9178330129,
+    "best_loss": 0.0
+   },
+   "8": {
+    "lanes": 8,
+    "solutions": 1147,
+    "seconds": 600.1948838662356,
+    "first_solution_s": 2.3355690739491592,
+    "candidates_per_s": 534163.3536340707,
+    "best_loss": 0.0
+   },
+   "10": {
+    "lanes": 8,
+    "solutions": 458,
+    "seconds": 600.3387011410668,
+    "first_solution_s": 0.7051422952475832,
+    "candidates_per_s": 364174.5827554553,
+    "best_loss": 0.0
+   },
+   "14": {
+    "lanes": 8,
+    "solutions": 112,
+    "seconds": 600.2579115955159,
+    "first_solution_s": 13.688741834252141,
+    "candidates_per_s": 189317.661299858,
+    "best_loss": 0.0
+   },
+   "20": {
+    "lanes": 8,
+    "solutions": 27,
+    "seconds": 600.5139155471697,
+    "first_solution_s": 5.058080412355139,
+    "candidates_per_s": 144710.61161142075,
+    "best_loss": 0.0
+   }
+  },
+  "stica": {
+   "1": {
+    "lanes": 32768,
+    "solutions": 125020050,
+    "seconds": 600.0217824233696,
+    "first_solution_s": 7.305690246539598e-05,
+    "candidates_per_s": 454086827.88078094,
+    "best_loss": 0.0
+   },
+   "2": {
+    "lanes": 32768,
+    "solutions": 9394942,
+    "seconds": 600.1885455902666,
+    "first_solution_s": 0.00019546286694094306,
+    "candidates_per_s": 167272203.5127558,
+    "best_loss": 0.0
+   },
+   "4": {
+    "lanes": 32768,
+    "solutions": 955273,
+    "seconds": 600.3602481363341,
+    "first_solution_s": 0.00034409177123961854,
+    "candidates_per_s": 85177115.78463379,
+    "best_loss": 0.0
+   },
+   "6": {
+    "lanes": 32768,
+    "solutions": 234756,
+    "seconds": 600.4214059347287,
+    "first_solution_s": 0.0005793605678263702,
+    "candidates_per_s": 56667190.26286472,
+    "best_loss": 0.0
+   },
+   "8": {
+    "lanes": 32768,
+    "solutions": 81992,
+    "seconds": 600.6919682892039,
+    "first_solution_s": 0.0023713315877103014,
+    "candidates_per_s": 43179495.15767842,
+    "best_loss": 0.0
+   },
+   "10": {
+    "lanes": 32768,
+    "solutions": 18980,
+    "seconds": 600.3587622521445,
+    "first_solution_s": 0.005830489222717006,
+    "candidates_per_s": 25430238.583888453,
+    "best_loss": 0.0
+   },
+   "14": {
+    "lanes": 32768,
+    "solutions": 1192,
+    "seconds": 600.3088422380388,
+    "first_solution_s": 0.004981901915016351,
+    "candidates_per_s": 7056779.347454977,
+    "best_loss": 0.0
+   },
+   "20": {
+    "lanes": 32768,
+    "solutions": 502,
+    "seconds": 600.6140747303143,
+    "first_solution_s": 0.056523402279708534,
+    "candidates_per_s": 5852055.254579599,
+    "best_loss": 0.0
+   }
+  },
+  "wolfram_compiled": {
+   "1": {
+    "kernels": 8,
+    "solutions": 6958,
+    "seconds": 600.044374,
+    "first_solution_s": 0.013259,
+    "mutations": 15346215,
+    "candidates_per_s": 25575.13354837321
+   },
+   "2": {
+    "kernels": 8,
+    "solutions": 912,
+    "seconds": 600.014704,
+    "first_solution_s": 2.922949,
+    "mutations": 9644524,
+    "candidates_per_s": 16073.812751095511
+   },
+   "4": {
+    "kernels": 8,
+    "solutions": 77,
+    "seconds": 600.008412,
+    "first_solution_s": 0.051504,
+    "mutations": 3988708,
+    "candidates_per_s": 6647.753465163085
+   },
+   "6": {
+    "kernels": 8,
+    "solutions": 10,
+    "seconds": 600.007067,
+    "first_solution_s": 287.727363,
+    "mutations": 2139928,
+    "candidates_per_s": 3566.504659185956
+   },
+   "8": {
+    "kernels": 8,
+    "solutions": 1,
+    "seconds": 600.008225,
+    "first_solution_s": 491.497252,
+    "mutations": 1276257,
+    "candidates_per_s": 2127.065841472423
+   },
+   "10": {
+    "kernels": 8,
+    "solutions": 0,
+    "seconds": 600.008964,
+    "first_solution_s": null,
+    "mutations": 882097,
+    "candidates_per_s": 1470.1397027795072
+   },
+   "14": {
+    "kernels": 8,
+    "solutions": 0,
+    "seconds": 600.008671,
+    "first_solution_s": null,
+    "mutations": 485094,
+    "candidates_per_s": 808.4783161408678
+   },
+   "20": {
+    "kernels": 8,
+    "solutions": 0,
+    "seconds": 600.027681,
+    "first_solution_s": null,
+    "mutations": 227213,
+    "candidates_per_s": 378.67086335305254
+   }
+  }
+ },
+ "wolfram_ladder_timing": {
+  "1": {
+   "interpreted_s": 0.0100203046875,
+   "compiled_s": 8.2502197265625e-05
+  },
+  "2": {
+   "interpreted_s": 0.040639515625,
+   "compiled_s": 0.00032482568359375
+  },
+  "4": {
+   "interpreted_s": 0.509611,
+   "compiled_s": 0.00882141796875
+  },
+  "6": {
+   "interpreted_s": 1.0755215,
+   "compiled_s": 0.079506765625
+  },
+  "8": {
+   "interpreted_s": 2.536055,
+   "compiled_s": 0.04394846875
+  },
+  "10": {
+   "interpreted_s": 3.895567,
+   "compiled_s": 0.050965671875
+  },
+  "14": {
+   "interpreted_s": 7.132951,
+   "compiled_s": 0.285303125
+  },
+  "20": {
+   "interpreted_s": 14.210351,
+   "compiled_s": 0.29909425
+  }
+ },
+ "hardware": {
+  "stica_anytime": "NVIDIA A100-SXM4-80GB, 590.48.01, 500.00 W",
+  "stica_census": "NVIDIA A100-SXM4-80GB, 590.48.01, 500.00 W",
+  "stica_first": "NVIDIA A100-SXM4-80GB, 590.48.01, 500.00 W",
+  "stica_latency": "NVIDIA A100-SXM4-80GB, 590.48.01, 500.00 W",
+  "stica_reach": "NVIDIA A100-SXM4-80GB, 590.48.01, 500.00 W",
+  "stica_redo": "NVIDIA A100-SXM4-80GB, 590.48.01, 500.00 W",
+  "numba_anytime": "INTEL(R) XEON(R) PLATINUM 8580",
+  "numba_first": "INTEL(R) XEON(R) PLATINUM 8580",
+  "numba_latency": "INTEL(R) XEON(R) PLATINUM 8580",
+  "numba_reach": "INTEL(R) XEON(R) PLATINUM 8580",
+  "numba_redo": "INTEL(R) XEON(R) PLATINUM 8580",
+  "wolfram": {
+   "latency": "x86-64",
+   "first": "x86-64",
+   "anytime_compiled": "x86-64",
+   "anytime_interpreted": "x86-64",
+   "harvest": "x86-64"
+  }
+ }
+}

@@ -1,0 +1,689 @@
+{
+ "metric": "first",
+ "metadata": {
+  "date": "2026-11-17T16:05:10",
+  "host": "node1463",
+  "python": "3.12.13",
+  "impl": "stica",
+  "cpu": "AMD EPYC 7763 64-Core Processor",
+  "cpus_allocated": 8,
+  "slurm_job": "29459459",
+  "commit": "8e3c6c1-dirty",
+  "jax": "0.6.2",
+  "backend": "gpu",
+  "devices": [
+   "cuda:0"
+  ],
+  "gpu": "NVIDIA A100-SXM4-80GB, 590.48.01, 500.00 W"
+ },
+ "settings": {
+  "metric": "first",
+  "impl": "stica",
+  "out": "~/stica_equal_time/runs/et_20261117/a100",
+  "seed": 0,
+  "runs": 30,
+  "lanes": null,
+  "latency_chunk": 100,
+  "first_chunk": 16,
+  "census_runs": 8388608,
+  "census_batch": 65536,
+  "scale": 10,
+  "budget": 3600.0,
+  "scales": "1,2,4,6,8,10,14,20",
+  "reach_budget": 600.0,
+  "chunk_seconds": 1.0,
+  "max_batch_bytes": 8000000000.0
+ },
+ "wall_start": 1794949511.4559977,
+ "wall_end": 1794949531.4370093,
+ "rapl_microjoules": {
+  "intel-rapl:0:package-0": 5630148490,
+  "intel-rapl:0:0:core": 64744973,
+  "intel-rapl:1:package-1": 5688871558,
+  "intel-rapl:1:0:core": 73367605
+ },
+ "result": {
+  "rows": [
+   {
+    "lanes": 128,
+    "chunk": 16,
+    "compile_s": 6.8121273117139935,
+    "repeats": 30,
+    "median_interpolated_s": 0.0014025057316757739,
+    "median_detected_s": 0.004467749036848545,
+    "runs": [
+     {
+      "interpolated": 0.0008147010812535882,
+      "detected": 0.00434507243335247,
+      "mutations": 3
+     },
+     {
+      "interpolated": 0.0022809060174040496,
+      "detected": 0.004054944030940533,
+      "mutations": 9
+     },
+     {
+      "interpolated": 0.0007689959602430463,
+      "detected": 0.0041013117879629135,
+      "mutations": 3
+     },
+     {
+      "interpolated": 0.03931901988107711,
+      "detected": 0.04197564721107483,
+      "mutations": 150
+     },
+     {
+      "interpolated": 0.0028960115741938353,
+      "detected": 0.004633618518710136,
+      "mutations": 10
+     },
+     {
+      "interpolated": 0.0003874601679854095,
+      "detected": 0.006199362687766552,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0016207096632570028,
+      "detected": 0.006482838653028011,
+      "mutations": 4
+     },
+     {
+      "interpolated": 0.0015697299386374652,
+      "detected": 0.005023135803639889,
+      "mutations": 5
+     },
+     {
+      "interpolated": 0.00029887305572628975,
+      "detected": 0.004781968891620636,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0014422356616705656,
+      "detected": 0.00461515411734581,
+      "mutations": 5
+     },
+     {
+      "interpolated": 0.0035615204251371324,
+      "detected": 0.006331591866910458,
+      "mutations": 9
+     },
+     {
+      "interpolated": 0.0008723579230718315,
+      "detected": 0.0046525755897164345,
+      "mutations": 3
+     },
+     {
+      "interpolated": 0.002069467562250793,
+      "detected": 0.004730211570858955,
+      "mutations": 7
+     },
+     {
+      "interpolated": 0.00043209962313994765,
+      "detected": 0.0069135939702391624,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0020014593610540032,
+      "detected": 0.00640466995537281,
+      "mutations": 5
+     },
+     {
+      "interpolated": 0.0009819034021347761,
+      "detected": 0.0039276136085391045,
+      "mutations": 4
+     },
+     {
+      "interpolated": 0.0013627758016809821,
+      "detected": 0.004360882565379143,
+      "mutations": 5
+     },
+     {
+      "interpolated": 0.0010665806476026773,
+      "detected": 0.004266322590410709,
+      "mutations": 4
+     },
+     {
+      "interpolated": 0.0018234075396321714,
+      "detected": 0.004167788662016392,
+      "mutations": 7
+     },
+     {
+      "interpolated": 0.001084725372493267,
+      "detected": 0.004338901489973068,
+      "mutations": 4
+     },
+     {
+      "interpolated": 0.0002726095844991505,
+      "detected": 0.004361753351986408,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0005414410261437297,
+      "detected": 0.0043315282091498375,
+      "mutations": 2
+     },
+     {
+      "interpolated": 0.002684385981410742,
+      "detected": 0.004295017570257187,
+      "mutations": 10
+     },
+     {
+      "interpolated": 0.00047582434490323067,
+      "detected": 0.0038065947592258453,
+      "mutations": 2
+     },
+     {
+      "interpolated": 0.0066254555131308734,
+      "detected": 0.007877628318965435,
+      "mutations": 27
+     },
+     {
+      "interpolated": 0.001984049566090107,
+      "detected": 0.003968099132180214,
+      "mutations": 8
+     },
+     {
+      "interpolated": 0.003769152390304953,
+      "detected": 0.004020429216325283,
+      "mutations": 15
+     },
+     {
+      "interpolated": 0.00026501709362491965,
+      "detected": 0.0042402734979987144,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.006331336102448404,
+      "detected": 0.008968472480773926,
+      "mutations": 23
+     },
+     {
+      "interpolated": 0.0011434361804276705,
+      "detected": 0.004573744721710682,
+      "mutations": 4
+     }
+    ]
+   },
+   {
+    "lanes": 1024,
+    "chunk": 16,
+    "compile_s": 4.263858671300113,
+    "repeats": 30,
+    "median_interpolated_s": 0.0002827269199769944,
+    "median_detected_s": 0.0043737818486988544,
+    "runs": [
+     {
+      "interpolated": 0.0005315346643328667,
+      "detected": 0.008504554629325867,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00040571962017565966,
+      "detected": 0.0064915139228105545,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003067849320359528,
+      "detected": 0.004908558912575245,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00030026258900761604,
+      "detected": 0.004804201424121857,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0004090534639544785,
+      "detected": 0.006544855423271656,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00028417399153113365,
+      "detected": 0.004546783864498138,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00027270102873444557,
+      "detected": 0.004363216459751129,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00028127984842285514,
+      "detected": 0.004500477574765682,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00030081922886893153,
+      "detected": 0.0048131076619029045,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0008321333443745971,
+      "detected": 0.006657066754996777,
+      "mutations": 2
+     },
+     {
+      "interpolated": 0.0003151075216010213,
+      "detected": 0.005041720345616341,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0006943290354683995,
+      "detected": 0.005554632283747196,
+      "mutations": 2
+     },
+     {
+      "interpolated": 0.00026278727455064654,
+      "detected": 0.004204596392810345,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00025410467060282826,
+      "detected": 0.004065674729645252,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00025331624783575535,
+      "detected": 0.004053059965372086,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00025726185413077474,
+      "detected": 0.004116189666092396,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002585768233984709,
+      "detected": 0.004137229174375534,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0005229820962995291,
+      "detected": 0.004183856770396233,
+      "mutations": 2
+     },
+     {
+      "interpolated": 0.00026319187600165606,
+      "detected": 0.004211070016026497,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00026071968022733927,
+      "detected": 0.004171514883637428,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00026156246894970536,
+      "detected": 0.004184999503195286,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002624767948873341,
+      "detected": 0.004199628718197346,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00027119502192363143,
+      "detected": 0.004339120350778103,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00027402170235291123,
+      "detected": 0.00438434723764658,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00029545911820605397,
+      "detected": 0.0047273458912968636,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0005088831530883908,
+      "detected": 0.004071065224707127,
+      "mutations": 2
+     },
+     {
+      "interpolated": 0.00024165044305846095,
+      "detected": 0.003866407088935375,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00027040293207392097,
+      "detected": 0.0043264469131827354,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0007753384998068213,
+      "detected": 0.006202707998454571,
+      "mutations": 2
+     },
+     {
+      "interpolated": 0.0011628970387391746,
+      "detected": 0.0062021175399422646,
+      "mutations": 3
+     }
+    ]
+   },
+   {
+    "lanes": 8192,
+    "chunk": 16,
+    "compile_s": 4.062027690000832,
+    "repeats": 30,
+    "median_interpolated_s": 0.0002808464923873544,
+    "median_detected_s": 0.00449354387819767,
+    "runs": [
+     {
+      "interpolated": 0.00042514957021921873,
+      "detected": 0.0068023931235075,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002740880590863526,
+      "detected": 0.004385408945381641,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002803417737595737,
+      "detected": 0.004485468380153179,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002832748577930033,
+      "detected": 0.004532397724688053,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002668524975888431,
+      "detected": 0.00426963996142149,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002732959692366421,
+      "detected": 0.004372735507786274,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002725138911046088,
+      "detected": 0.00436022225767374,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002965060994029045,
+      "detected": 0.004744097590446472,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.000298459199257195,
+      "detected": 0.00477534718811512,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003161595668643713,
+      "detected": 0.005058553069829941,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0004256317624822259,
+      "detected": 0.006810108199715614,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003863373422063887,
+      "detected": 0.006181397475302219,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002964860759675503,
+      "detected": 0.0047437772154808044,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0004627933376468718,
+      "detected": 0.007404693402349949,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00027218693867325783,
+      "detected": 0.004354991018772125,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00026979303220286965,
+      "detected": 0.0043166885152459145,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00028104125522077084,
+      "detected": 0.004496660083532333,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00026046164566650987,
+      "detected": 0.004167386330664158,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00026526383589953184,
+      "detected": 0.0042442213743925095,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00028604752151295543,
+      "detected": 0.004576760344207287,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00027966295601800084,
+      "detected": 0.0044746072962880135,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002799610374495387,
+      "detected": 0.004479376599192619,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002806517295539379,
+      "detected": 0.004490427672863007,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00027770805172622204,
+      "detected": 0.004443328827619553,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00028382649179548025,
+      "detected": 0.004541223868727684,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00028589164139702916,
+      "detected": 0.004574266262352467,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002627352951094508,
+      "detected": 0.004203764721751213,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002712964778766036,
+      "detected": 0.004340743646025658,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00029846420511603355,
+      "detected": 0.004775427281856537,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00029980234103277326,
+      "detected": 0.004796837456524372,
+      "mutations": 1
+     }
+    ]
+   },
+   {
+    "lanes": 32768,
+    "chunk": 16,
+    "compile_s": 3.8933720719069242,
+    "repeats": 30,
+    "median_interpolated_s": 0.0003018543648067862,
+    "median_detected_s": 0.004829669836908579,
+    "runs": [
+     {
+      "interpolated": 0.0003095795982517302,
+      "detected": 0.004953273572027683,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003917870344594121,
+      "detected": 0.006268592551350594,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00031734362710267305,
+      "detected": 0.005077498033642769,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003610971034504473,
+      "detected": 0.005777553655207157,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003716006758622825,
+      "detected": 0.00594561081379652,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00030090752989053726,
+      "detected": 0.004814520478248596,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003090573591180146,
+      "detected": 0.004944917745888233,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003093185368925333,
+      "detected": 0.004949096590280533,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003231095615774393,
+      "detected": 0.005169752985239029,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002943276194855571,
+      "detected": 0.004709241911768913,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003032131353393197,
+      "detected": 0.004851410165429115,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00031703931745141745,
+      "detected": 0.005072629079222679,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00031412066891789436,
+      "detected": 0.00502593070268631,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002905830042436719,
+      "detected": 0.00464932806789875,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003081563045270741,
+      "detected": 0.004930500872433186,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003008212079294026,
+      "detected": 0.0048131393268704414,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00030192011035978794,
+      "detected": 0.004830721765756607,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00029713608091697097,
+      "detected": 0.0047541772946715355,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0005555757670663297,
+      "detected": 0.008889212273061275,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00028825050685554743,
+      "detected": 0.004612008109688759,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00029131193878129125,
+      "detected": 0.00466099102050066,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002892017364501953,
+      "detected": 0.004627227783203125,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00027166656218469143,
+      "detected": 0.004346664994955063,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.000288074545096606,
+      "detected": 0.004609192721545696,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002897721133194864,
+      "detected": 0.004636353813111782,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00029892008751630783,
+      "detected": 0.004782721400260925,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0002908165333792567,
+      "detected": 0.004653064534068108,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.0003017886192537844,
+      "detected": 0.004828617908060551,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00030065455939620733,
+      "detected": 0.004810472950339317,
+      "mutations": 1
+     },
+     {
+      "interpolated": 0.00032589799957349896,
+      "detected": 0.005214367993175983,
+      "mutations": 1
+     }
+    ]
+   }
+  ]
+ }
+}

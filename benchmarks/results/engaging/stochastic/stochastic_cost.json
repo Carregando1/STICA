@@ -1,0 +1,237 @@
+{
+ "part": "cost",
+ "metadata": {
+  "date": "2026-11-17T18:04:11",
+  "host": "node1918",
+  "gpu": "NVIDIA A100-SXM4-80GB",
+  "jax": "0.6.2",
+  "backend": "gpu",
+  "python": "3.12.13",
+  "commit": "a17804f-dirty",
+  "slurm_job": "29469701"
+ },
+ "settings": {
+  "part": "cost",
+  "out": "~/stica_equal_time/runs/st_20261117/a100",
+  "iterations": 20000,
+  "quick": false
+ },
+ "wall_start": 1794956475.391396,
+ "wall_end": 1794956652.0696921,
+ "result": {
+  "rows": [
+   {
+    "size": "64x31",
+    "backend": "pallas",
+    "mode": "deterministic",
+    "lanes": 32768,
+    "seconds_per_call": 0.00031149674852502,
+    "rollouts_per_s": 105195319.55039978,
+    "cell_updates_per_s": 208707513987.99316
+   },
+   {
+    "size": "64x31",
+    "backend": "pallas",
+    "mode": "probabilistic rules (16 levels)",
+    "lanes": 32768,
+    "seconds_per_call": 0.0003264100455185946,
+    "rollouts_per_s": 100389067.21739759,
+    "cell_updates_per_s": 199171909359.3168
+   },
+   {
+    "size": "64x31",
+    "backend": "pallas",
+    "mode": "asynchronous (1-2^-8)",
+    "lanes": 32768,
+    "seconds_per_call": 0.0003255607230932421,
+    "rollouts_per_s": 100650962.0959869,
+    "cell_updates_per_s": 199691508798.43802
+   },
+   {
+    "size": "64x31",
+    "backend": "pallas",
+    "mode": "noise (2^-10)",
+    "lanes": 32768,
+    "seconds_per_call": 0.0003250936161533744,
+    "rollouts_per_s": 100795581.24740456,
+    "cell_updates_per_s": 199978433194.85065
+   },
+   {
+    "size": "64x31",
+    "backend": "pallas",
+    "mode": "all three",
+    "lanes": 32768,
+    "seconds_per_call": 0.00047258462560311636,
+    "rollouts_per_s": 69337846.01685087,
+    "cell_updates_per_s": 137566286497.43213
+   },
+   {
+    "size": "64x31",
+    "backend": "xla",
+    "mode": "deterministic",
+    "lanes": 1024,
+    "seconds_per_call": 0.0003533188557316302,
+    "rollouts_per_s": 2898231.960701803,
+    "cell_updates_per_s": 5750092210.032377
+   },
+   {
+    "size": "64x31",
+    "backend": "xla",
+    "mode": "probabilistic rules (16 levels)",
+    "lanes": 1024,
+    "seconds_per_call": 0.0003575173357505262,
+    "rollouts_per_s": 2864196.7748230873,
+    "cell_updates_per_s": 5682566401.249005
+   },
+   {
+    "size": "64x31",
+    "backend": "xla",
+    "mode": "asynchronous (1-2^-8)",
+    "lanes": 1024,
+    "seconds_per_call": 0.0003583715559807976,
+    "rollouts_per_s": 2857369.629119975,
+    "cell_updates_per_s": 5669021344.17403
+   },
+   {
+    "size": "64x31",
+    "backend": "xla",
+    "mode": "noise (2^-10)",
+    "lanes": 1024,
+    "seconds_per_call": 0.00035647889102887956,
+    "rollouts_per_s": 2872540.3544779383,
+    "cell_updates_per_s": 5699120063.284229
+   },
+   {
+    "size": "64x31",
+    "backend": "xla",
+    "mode": "all three",
+    "lanes": 1024,
+    "seconds_per_call": 0.0003648949285393687,
+    "rollouts_per_s": 2806287.289601286,
+    "cell_updates_per_s": 5567673982.568952
+   },
+   {
+    "size": "640x311",
+    "backend": "pallas",
+    "mode": "deterministic",
+    "lanes": 8192,
+    "seconds_per_call": 0.0008834515093991282,
+    "rollouts_per_s": 9272721.720257988,
+    "cell_updates_per_s": 1845642531200.15
+   },
+   {
+    "size": "640x311",
+    "backend": "pallas",
+    "mode": "probabilistic rules (16 levels)",
+    "lanes": 8192,
+    "seconds_per_call": 0.002816588550997086,
+    "rollouts_per_s": 2908483.0289109824,
+    "cell_updates_per_s": 578904462074.4419
+   },
+   {
+    "size": "640x311",
+    "backend": "pallas",
+    "mode": "asynchronous (1-2^-8)",
+    "lanes": 8192,
+    "seconds_per_call": 0.005002070127664942,
+    "rollouts_per_s": 1637721.9413003663,
+    "cell_updates_per_s": 325972175196.4249
+   },
+   {
+    "size": "640x311",
+    "backend": "pallas",
+    "mode": "noise (2^-10)",
+    "lanes": 8192,
+    "seconds_per_call": 0.0046054965653908216,
+    "rollouts_per_s": 1778744.134033423,
+    "cell_updates_per_s": 354041232438.01245
+   },
+   {
+    "size": "640x311",
+    "backend": "pallas",
+    "mode": "all three",
+    "lanes": 8192,
+    "seconds_per_call": 0.011177497063146299,
+    "rollouts_per_s": 732901.1095883101,
+    "cell_updates_per_s": 145876636852.45724
+   },
+   {
+    "size": "640x311",
+    "backend": "xla",
+    "mode": "deterministic",
+    "lanes": 256,
+    "seconds_per_call": 0.002931293358615651,
+    "rollouts_per_s": 87333.46297379803,
+    "cell_updates_per_s": 17382852470.30476
+   },
+   {
+    "size": "640x311",
+    "backend": "xla",
+    "mode": "probabilistic rules (16 levels)",
+    "lanes": 256,
+    "seconds_per_call": 0.0030555964896099314,
+    "rollouts_per_s": 83780.6958053811,
+    "cell_updates_per_s": 16675709693.103054
+   },
+   {
+    "size": "640x311",
+    "backend": "xla",
+    "mode": "asynchronous (1-2^-8)",
+    "lanes": 256,
+    "seconds_per_call": 0.003323766941567725,
+    "rollouts_per_s": 77021.04404445764,
+    "cell_updates_per_s": 15330268606.608849
+   },
+   {
+    "size": "640x311",
+    "backend": "xla",
+    "mode": "noise (2^-10)",
+    "lanes": 256,
+    "seconds_per_call": 0.0032357036962770342,
+    "rollouts_per_s": 79117.25671746484,
+    "cell_updates_per_s": 15747498777.044203
+   },
+   {
+    "size": "640x311",
+    "backend": "xla",
+    "mode": "all three",
+    "lanes": 256,
+    "seconds_per_call": 0.0035884313514096696,
+    "rollouts_per_s": 71340.3643348043,
+    "cell_updates_per_s": 14199586117.199448
+   }
+  ],
+  "evolution": [
+   {
+    "setting": "deterministic genome, 1 sample",
+    "runs": 256,
+    "samples": 1,
+    "iterations": 200,
+    "seconds": 0.010440864014838423,
+    "iterations_per_s": 19155.502812388182,
+    "candidates_per_s": 4903808.719971375,
+    "rollouts_per_s": 9807617.43994275
+   },
+   {
+    "setting": "deterministic genome, noise 2^-10",
+    "runs": 256,
+    "samples": 64,
+    "iterations": 200,
+    "seconds": 0.03393451145921762,
+    "iterations_per_s": 5893.705004133014,
+    "candidates_per_s": 1508788.4810580516,
+    "rollouts_per_s": 193124925.5754306
+   },
+   {
+    "setting": "probabilistic genome, 16 levels",
+    "runs": 256,
+    "samples": 64,
+    "iterations": 200,
+    "seconds": 0.027374186436645687,
+    "iterations_per_s": 7306.153206155599,
+    "candidates_per_s": 1870375.2207758334,
+    "rollouts_per_s": 239408028.25930667
+   }
+  ]
+ }
+}

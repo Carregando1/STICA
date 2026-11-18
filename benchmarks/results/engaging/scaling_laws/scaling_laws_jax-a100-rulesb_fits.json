@@ -1,0 +1,23 @@
+{
+ "metadata": {
+  "date": "2026-11-17T19:44:38",
+  "host": "node2303",
+  "gpu": "NVIDIA A100-SXM4-80GB, 81920 MiB",
+  "jax": "0.6.2",
+  "python": "3.12.13",
+  "settings": {
+   "suites": [
+    "rules1d_batch"
+   ],
+   "out": "~/stica_equal_time/runs/st_20261117/a100",
+   "tag": "jax-a100-rulesb",
+   "quick": false,
+   "max_bytes": 30000000000.0,
+   "warmup": 1.0,
+   "min_rep": 0.2,
+   "max_call": 30.0
+  },
+  "commit": "6643372"
+ },
+ "fits": []
+}

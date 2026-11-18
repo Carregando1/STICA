@@ -1,0 +1,80 @@
+{
+ "metric": "redo",
+ "metadata": {
+  "date": "2026-11-17T16:05:32",
+  "host": "node1463",
+  "python": "3.12.13",
+  "impl": "stica",
+  "cpu": "AMD EPYC 7763 64-Core Processor",
+  "cpus_allocated": 8,
+  "slurm_job": "29459459",
+  "commit": "8e3c6c1-dirty",
+  "jax": "0.6.2",
+  "backend": "gpu",
+  "devices": [
+   "cuda:0"
+  ],
+  "gpu": "NVIDIA A100-SXM4-80GB, 590.48.01, 500.00 W"
+ },
+ "settings": {
+  "metric": "redo",
+  "impl": "stica",
+  "out": "~/stica_equal_time/runs/et_20261117/a100",
+  "seed": 0,
+  "runs": 50,
+  "lanes": null,
+  "latency_chunk": 100,
+  "first_chunk": 16,
+  "census_runs": 8388608,
+  "census_batch": 65536,
+  "scale": 10,
+  "budget": 3600.0,
+  "scales": "1,2,4,6,8,10,14,20",
+  "reach_budget": 600.0,
+  "chunk_seconds": 1.0,
+  "max_batch_bytes": 8000000000.0
+ },
+ "wall_start": 1794949533.8652306,
+ "wall_end": 1794949547.4157104,
+ "rapl_microjoules": {
+  "intel-rapl:0:package-0": 3821023573,
+  "intel-rapl:0:0:core": 43861364,
+  "intel-rapl:1:package-1": 3823569767,
+  "intel-rapl:1:0:core": 50640188
+ },
+ "result": {
+  "lifetime50_his_100_runs": {
+   "runs": 100,
+   "seconds": [
+    0.41283551044762135,
+    0.3987093782052398,
+    0.4039760250598192
+   ],
+   "compile_and_first_s": 3.8996661733835936,
+   "solved": 99,
+   "median_mutations": 1935.0
+  },
+  "lifetime50_10000_runs": {
+   "runs": 10000,
+   "seconds": [
+    0.519967220723629,
+    0.5164104690775275,
+    0.5189572889357805
+   ],
+   "compile_and_first_s": 2.2909958511590958,
+   "solved": 9990,
+   "median_mutations": 1982.0
+  },
+  "andxor_10000_runs": {
+   "runs": 10000,
+   "seconds": [
+    0.462447177618742,
+    0.456059399060905,
+    0.45452295150607824
+   ],
+   "compile_and_first_s": 2.5669139670208097,
+   "solved": 9998,
+   "median_mutations": 1828.0
+  }
+ }
+}

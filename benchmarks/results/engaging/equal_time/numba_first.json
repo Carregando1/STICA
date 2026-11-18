@@ -1,0 +1,200 @@
+{
+ "metric": "first",
+ "metadata": {
+  "date": "2026-11-17T17:57:42",
+  "host": "node3401-c1",
+  "python": "3.12.13",
+  "impl": "numba",
+  "cpu": "INTEL(R) XEON(R) PLATINUM 8580",
+  "cpus_allocated": 10,
+  "slurm_job": "29470033",
+  "commit": "96203f6-dirty",
+  "numba": "0.68.1",
+  "threads": 8
+ },
+ "settings": {
+  "metric": "first",
+  "impl": "numba",
+  "out": "~/stica_equal_time/runs/et_20261117",
+  "seed": 0,
+  "runs": 30,
+  "lanes": null,
+  "latency_chunk": 100,
+  "first_chunk": 16,
+  "census_runs": 8388608,
+  "census_batch": 65536,
+  "scale": 10,
+  "budget": 3600.0,
+  "scales": "1,2,4,6,8,10,14,20",
+  "reach_budget": 600.0,
+  "chunk_seconds": 1.0,
+  "max_batch_bytes": 8000000000.0
+ },
+ "wall_start": 1794956262.5684838,
+ "wall_end": 1794956266.1096888,
+ "rapl_microjoules": null,
+ "result": {
+  "rows": [
+   {
+    "lanes": 8,
+    "chunk": 256,
+    "compile_s": 3.5142525862902403,
+    "repeats": 30,
+    "median_interpolated_s": 0.00038373332063201815,
+    "median_detected_s": 0.00044126948341727257,
+    "runs": [
+     {
+      "interpolated": 0.00043407063640188426,
+      "detected": 0.0005769450217485428,
+      "mutations": 580
+     },
+     {
+      "interpolated": 0.001127394050854491,
+      "detected": 0.0011545438319444656,
+      "mutations": 1501
+     },
+     {
+      "interpolated": 0.0008825352269923314,
+      "detected": 0.0009680883958935738,
+      "mutations": 1172
+     },
+     {
+      "interpolated": 0.0005551938738790341,
+      "detected": 0.0006108004599809647,
+      "mutations": 697
+     },
+     {
+      "interpolated": 0.0001472424810344819,
+      "detected": 0.0002129608765244484,
+      "mutations": 177
+     },
+     {
+      "interpolated": 4.6127737732604146e-05,
+      "detected": 0.00019046291708946228,
+      "mutations": 62
+     },
+     {
+      "interpolated": 0.0006860329012852162,
+      "detected": 0.000722062774002552,
+      "mutations": 972
+     },
+     {
+      "interpolated": 0.00011576982797123492,
+      "detected": 0.00019498076289892197,
+      "mutations": 152
+     },
+     {
+      "interpolated": 0.000653747145406669,
+      "detected": 0.0007955841720104218,
+      "mutations": 835
+     },
+     {
+      "interpolated": 0.0006309654709184542,
+      "detected": 0.0007966514676809311,
+      "mutations": 790
+     },
+     {
+      "interpolated": 0.001157459497335367,
+      "detected": 0.0012386580929160118,
+      "mutations": 1439
+     },
+     {
+      "interpolated": 0.0011533968972798903,
+      "detected": 0.0011824294924736023,
+      "mutations": 1499
+     },
+     {
+      "interpolated": 0.0012674965255428106,
+      "detected": 0.0013650814071297646,
+      "mutations": 1668
+     },
+     {
+      "interpolated": 0.0003231189912185073,
+      "detected": 0.00038245413452386856,
+      "mutations": 432
+     },
+     {
+      "interpolated": 0.0007132425671443343,
+      "detected": 0.0007769279181957245,
+      "mutations": 941
+     },
+     {
+      "interpolated": 0.00022161325614433736,
+      "detected": 0.0004193084314465523,
+      "mutations": 260
+     },
+     {
+      "interpolated": 0.00021626244779326953,
+      "detected": 0.0004031788557767868,
+      "mutations": 269
+     },
+     {
+      "interpolated": 1.8076239939546213e-05,
+      "detected": 0.00020119640976190567,
+      "mutations": 23
+     },
+     {
+      "interpolated": 0.0002346351757296361,
+      "detected": 0.0003465060144662857,
+      "mutations": 326
+     },
+     {
+      "interpolated": 0.0002584190297056921,
+      "detected": 0.00039770081639289856,
+      "mutations": 334
+     },
+     {
+      "interpolated": 5.1486058509908617e-05,
+      "detected": 0.00021967384964227676,
+      "mutations": 60
+     },
+     {
+      "interpolated": 0.0003323670389363542,
+      "detected": 0.000398918054997921,
+      "mutations": 426
+     },
+     {
+      "interpolated": 0.0006366882371366955,
+      "detected": 0.0008027255535125732,
+      "mutations": 826
+     },
+     {
+      "interpolated": 7.843307685106993e-05,
+      "detected": 0.00015810132026672363,
+      "mutations": 127
+     },
+     {
+      "interpolated": 0.0005671239778166637,
+      "detected": 0.000574023462831974,
+      "mutations": 759
+     },
+     {
+      "interpolated": 0.00045043660065857694,
+      "detected": 0.0005433568730950356,
+      "mutations": 630
+     },
+     {
+      "interpolated": 0.000383440732548479,
+      "detected": 0.0003887452185153961,
+      "mutations": 505
+     },
+     {
+      "interpolated": 0.0003474927907518577,
+      "detected": 0.00046323053538799286,
+      "mutations": 581
+     },
+     {
+      "interpolated": 2.894696081057191e-06,
+      "detected": 0.00018526054918766022,
+      "mutations": 4
+     },
+     {
+      "interpolated": 0.0003840259087155573,
+      "detected": 0.0004185447469353676,
+      "mutations": 469
+     }
+    ]
+   }
+  ]
+ }
+}

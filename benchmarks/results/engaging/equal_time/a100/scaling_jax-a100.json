@@ -1,0 +1,34 @@
+{
+ "impl": "jax",
+ "tag": "jax-a100",
+ "date": "2026-11-17T16:04:07",
+ "python": "3.12.13",
+ "platform": "Linux-4.18.0-553.147.1.el8_10.x86_64-x86_64-with-glibc2.28",
+ "argv": [
+  "--impl",
+  "jax",
+  "--tag",
+  "jax-a100",
+  "--suites",
+  "evo1d,evo1d_large",
+  "--out",
+  "~/stica_equal_time/runs/et_20261117/a100"
+ ],
+ "timing": {
+  "warmup": 1.0,
+  "min_rep": 0.2,
+  "reps": 7,
+  "max_call": 20.0
+ },
+ "cpu": "AMD EPYC 7763 64-Core Processor",
+ "logical_cpus": 128,
+ "jax": "0.6.2",
+ "jaxlib": "0.6.2",
+ "numpy": "2.2.6",
+ "numba": "0.68.1",
+ "stica": "0.1.0",
+ "device": "NVIDIA A100-SXM4-80GB",
+ "platform_jax": "gpu",
+ "env": {},
+ "git_commit": "8e3c6c1"
+}

@@ -1,0 +1,61 @@
+{
+ "metric": "redo",
+ "metadata": {
+  "date": "2026-11-17T17:57:46",
+  "host": "node3401-c1",
+  "python": "3.12.13",
+  "impl": "numba",
+  "cpu": "INTEL(R) XEON(R) PLATINUM 8580",
+  "cpus_allocated": 10,
+  "slurm_job": "29470033",
+  "commit": "96203f6-dirty",
+  "numba": "0.68.1",
+  "threads": 8
+ },
+ "settings": {
+  "metric": "redo",
+  "impl": "numba",
+  "out": "~/stica_equal_time/runs/et_20261117",
+  "seed": 0,
+  "runs": 50,
+  "lanes": null,
+  "latency_chunk": 100,
+  "first_chunk": 16,
+  "census_runs": 8388608,
+  "census_batch": 65536,
+  "scale": 10,
+  "budget": 3600.0,
+  "scales": "1,2,4,6,8,10,14,20",
+  "reach_budget": 600.0,
+  "chunk_seconds": 1.0,
+  "max_batch_bytes": 8000000000.0
+ },
+ "wall_start": 1794956266.842572,
+ "wall_end": 1794956275.6862476,
+ "rapl_microjoules": null,
+ "result": {
+  "lifetime50_his_100_runs": {
+   "runs": 100,
+   "seconds": [
+    0.01884413603693247,
+    0.023404979147017002,
+    0.023587465286254883
+   ],
+   "solved": 100,
+   "median_mutations": 2008.5
+  },
+  "lifetime50_10000_runs": {
+   "runs": 10000,
+   "seconds": [
+    1.829630110412836,
+    1.8151047686114907,
+    1.8457832736894488
+   ],
+   "solved": 9994,
+   "median_mutations": 1975.0
+  },
+  "andxor_10000_runs": {
+   "note": "not available: the packed CPU baseline handles radius 1 only"
+  }
+ }
+}

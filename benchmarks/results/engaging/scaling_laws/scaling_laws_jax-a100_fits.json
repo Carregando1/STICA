@@ -1,0 +1,364 @@
+{
+ "metadata": {
+  "date": "2026-11-17T19:16:35",
+  "host": "node2303",
+  "gpu": "NVIDIA A100-SXM4-80GB, 81920 MiB",
+  "jax": "0.6.2",
+  "python": "3.12.13",
+  "settings": {
+   "suites": [
+    "grid1d",
+    "batch1d",
+    "rules1d",
+    "grid2d",
+    "evo1d"
+   ],
+   "out": "~/stica_equal_time/runs/st_20261117/a100",
+   "tag": "jax-a100",
+   "quick": false,
+   "max_bytes": 30000000000.0,
+   "warmup": 1.0,
+   "min_rep": 0.2,
+   "max_call": 30.0
+  },
+  "commit": "89ac673"
+ },
+ "fits": [
+  {
+   "suite": "batch1d",
+   "impl": "fused kernel",
+   "series": "64 x 31 arrays",
+   "param": 2,
+   "t0_seconds": 4.03844553086215e-05,
+   "rate_cell_updates_per_s": 6578711672210.926,
+   "large_n_exponent": 0.7342975945688713,
+   "points": 7,
+   "N_range": [
+    507904.0,
+    2080374784.0
+   ]
+  },
+  {
+   "suite": "batch1d",
+   "impl": "packed XLA",
+   "series": "64 x 31 arrays",
+   "param": 2,
+   "t0_seconds": 0.0002303129340302636,
+   "rate_cell_updates_per_s": 338000387365.33997,
+   "large_n_exponent": 0.8417489511440338,
+   "points": 11,
+   "N_range": [
+    1984.0,
+    2080374784.0
+   ]
+  },
+  {
+   "suite": "grid1d",
+   "impl": "packed",
+   "series": "W x W, K=2, r=1",
+   "param": 2,
+   "t0_seconds": 0.00016263695563636395,
+   "rate_cell_updates_per_s": 10408824898.197784,
+   "large_n_exponent": 0.5325321040590127,
+   "points": 12,
+   "N_range": [
+    1024.0,
+    4294967296.0
+   ]
+  },
+  {
+   "suite": "grid1d",
+   "impl": "unpacked",
+   "series": "W x W, K=2, r=1",
+   "param": 2,
+   "t0_seconds": 0.00010886573025997045,
+   "rate_cell_updates_per_s": 3700761605.5831103,
+   "large_n_exponent": 2.6879216067956633,
+   "points": 11,
+   "N_range": [
+    1024.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "homogeneous",
+   "series": "n=2 (R=18)",
+   "param": 2,
+   "t0_seconds": 6.08108022678953e-05,
+   "rate_cell_updates_per_s": 27103901860.84936,
+   "large_n_exponent": 0.7452869741933948,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "homogeneous",
+   "series": "n=3 (R=135)",
+   "param": 3,
+   "t0_seconds": 6.574258931819225e-05,
+   "rate_cell_updates_per_s": 24739529082.302574,
+   "large_n_exponent": 0.7324343261386702,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "homogeneous",
+   "series": "n=4 (R=660)",
+   "param": 4,
+   "t0_seconds": 8.689676353600415e-05,
+   "rate_cell_updates_per_s": 15398594641.074686,
+   "large_n_exponent": 0.8310479307499521,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "homogeneous",
+   "series": "n=5 (R=2475)",
+   "param": 5,
+   "t0_seconds": 9.97457783167284e-05,
+   "rate_cell_updates_per_s": 15795281800.23877,
+   "large_n_exponent": 0.773432915425032,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "homogeneous",
+   "series": "n=6 (R=7722)",
+   "param": 6,
+   "t0_seconds": 8.754783257642835e-05,
+   "rate_cell_updates_per_s": 11339605040.106983,
+   "large_n_exponent": 0.8145627587107281,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "space only",
+   "series": "n=2 (R=18)",
+   "param": 2,
+   "t0_seconds": 6.121093569591389e-05,
+   "rate_cell_updates_per_s": 20943575348.37845,
+   "large_n_exponent": 0.8280103239644916,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "space only",
+   "series": "n=3 (R=135)",
+   "param": 3,
+   "t0_seconds": 6.25300542473272e-05,
+   "rate_cell_updates_per_s": 11753775785.738089,
+   "large_n_exponent": 0.9135203488069276,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "space only",
+   "series": "n=4 (R=660)",
+   "param": 4,
+   "t0_seconds": 8.469750080660772e-05,
+   "rate_cell_updates_per_s": 7329117370.848167,
+   "large_n_exponent": 0.9327601970152735,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "space only",
+   "series": "n=5 (R=2475)",
+   "param": 5,
+   "t0_seconds": 9.544185276801581e-05,
+   "rate_cell_updates_per_s": 6464484386.363325,
+   "large_n_exponent": 0.890800231173272,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "space only",
+   "series": "n=6 (R=7722)",
+   "param": 6,
+   "t0_seconds": 8.607198648012594e-05,
+   "rate_cell_updates_per_s": 5557830180.620282,
+   "large_n_exponent": 0.8957824681624951,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "spacetime",
+   "series": "n=2 (R=18)",
+   "param": 2,
+   "t0_seconds": 6.120464734000207e-05,
+   "rate_cell_updates_per_s": 20145557127.815956,
+   "large_n_exponent": 0.8442937733802186,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "spacetime",
+   "series": "n=3 (R=135)",
+   "param": 3,
+   "t0_seconds": 6.257444358359556e-05,
+   "rate_cell_updates_per_s": 9103198133.938478,
+   "large_n_exponent": 0.7381607391854695,
+   "points": 6,
+   "N_range": [
+    4096.0,
+    134217728.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "spacetime",
+   "series": "n=4 (R=660)",
+   "param": 4,
+   "t0_seconds": 8.212107469838571e-05,
+   "rate_cell_updates_per_s": 4826003968.763756,
+   "large_n_exponent": 0.5229504673609228,
+   "points": 5,
+   "N_range": [
+    4096.0,
+    16777216.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "spacetime",
+   "series": "n=5 (R=2475)",
+   "param": 5,
+   "t0_seconds": 8.880830609569447e-05,
+   "rate_cell_updates_per_s": 2314442970.4656663,
+   "large_n_exponent": 0.39222838790700865,
+   "points": 4,
+   "N_range": [
+    4096.0,
+    2097152.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "spacetime",
+   "series": "n=6 (R=7722)",
+   "param": 6,
+   "t0_seconds": 7.775783987062705e-05,
+   "rate_cell_updates_per_s": 2176516335.9644203,
+   "large_n_exponent": 0.3880420927882418,
+   "points": 4,
+   "N_range": [
+    4096.0,
+    2097152.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "time only",
+   "series": "n=2 (R=18)",
+   "param": 2,
+   "t0_seconds": 6.137138388000296e-05,
+   "rate_cell_updates_per_s": 30477140717.741405,
+   "large_n_exponent": 0.8131890809838234,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "time only",
+   "series": "n=3 (R=135)",
+   "param": 3,
+   "t0_seconds": 6.455715229023045e-05,
+   "rate_cell_updates_per_s": 24010530919.794537,
+   "large_n_exponent": 0.7412288330571825,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "time only",
+   "series": "n=4 (R=660)",
+   "param": 4,
+   "t0_seconds": 8.675220975852022e-05,
+   "rate_cell_updates_per_s": 15041014179.07652,
+   "large_n_exponent": 0.8322427317954958,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "time only",
+   "series": "n=5 (R=2475)",
+   "param": 5,
+   "t0_seconds": 9.808098744546931e-05,
+   "rate_cell_updates_per_s": 15416527702.43417,
+   "large_n_exponent": 0.7757319036679736,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  },
+  {
+   "suite": "grid2d",
+   "impl": "time only",
+   "series": "n=6 (R=7722)",
+   "param": 6,
+   "t0_seconds": 8.861331364549026e-05,
+   "rate_cell_updates_per_s": 11204385917.78549,
+   "large_n_exponent": 0.8170333024040421,
+   "points": 7,
+   "N_range": [
+    4096.0,
+    1073741824.0
+   ]
+  }
+ ]
+}

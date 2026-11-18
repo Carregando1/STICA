@@ -90,6 +90,17 @@ def gpu_energy(run: Path, start: float, end: float) -> float | None:
     return total
 
 
+def census_counts(run: Path) -> np.ndarray | None:
+    """Solved census runs by number of mutations to solution (index = mutations), from the census arrays
+    (stica_census.npz, about 300 MB) or from the histogram kept in the repository (stica_census_hist.npz)."""
+    full = next(run.rglob("stica_census.npz"), None)
+    if full is not None:
+        m = np.load(full)["mutations"]
+        return np.bincount(m[m > 0])
+    hist = next(run.rglob("stica_census_hist.npz"), None)
+    return None if hist is None else np.load(hist)["mutation_counts"]
+
+
 CHECKPOINTS = [1, 10, 60, 600, 3600]
 
 
@@ -156,22 +167,21 @@ def summarise(run: Path) -> dict:
         c = d["stica_census"]["result"]
         S["census"] = dict(runs=c["runs"], solved=c["solved"], quantiles=c["quantiles"],
                            distinct_curves=c["distinct_curves"])
-        npz = next(run.rglob("stica_census.npz"), None)
-        if npz is not None:
-            z = np.load(npz)
-            m = z["mutations"][z["mutations"] > 0]
-            ms = np.sort(m)
+        counts = census_counts(run)
+        if counts is not None:
+            cdf = np.cumsum(counts) / counts.sum()
+            quantile = lambda p: float(np.searchsorted(cdf, p))             # inverse CDF of mutations to solution
             prec = {}
             for name, v in rate.items():
                 n = int(v["per_hour"])
                 if n < 2:
                     continue
-                lo, hi = (np.quantile(ms, 0.5 + s * 0.98 / math.sqrt(n)) if 0 < 0.5 + s * 0.98 / math.sqrt(n) < 1
+                lo, hi = (quantile(0.5 + s * 0.98 / math.sqrt(n)) if 0 < 0.5 + s * 0.98 / math.sqrt(n) < 1
                           else np.nan for s in (-1, 1))
                 prec[name] = dict(solutions_per_hour=n, median_ci95_halfwidth=float((hi - lo) / 2),
                                   rarest_detectable_p=3 / n, ks_detectable_D=1.36 * math.sqrt(2 / n))
             S["precision_per_hour"] = prec
-            S["census_tail"] = {f"P(mutations<={k})": float((m <= k).mean()) for k in (1, 2, 5, 10, 100)}
+            S["census_tail"] = {f"P(mutations<={k})": float(cdf[k]) for k in (1, 2, 5, 10, 100)}
     if "harvest" in w:
         sols = w["harvest"]["solutions"]
         ha = [s[2] for s in sols]
