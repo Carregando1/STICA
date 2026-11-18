@@ -11,6 +11,8 @@ Suites (default: all)
   grid2d    2D STICA, a G x G grid for G steps, n = 2 .. 6 states (R = 18 .. 7,722 rules per cell), at the four sharing
             levels (spacetime (G, G, G, R), time only (G, 1, 1, R), space only (1, G, G, R), homogeneous (1, 1, 1, R)),
             as far as the rule tensor fits in --max-bytes
+  rules1d_batch  the same rule spaces where the device is busy: 4096 arrays of 64 x 64 at once (vmapped; the fused
+            kernel for two rules of radius 1/2 or 1)
   evo1d     evolution (candidates per second): against array size (scale s: 64 s x (31 s + 1), lifetime 50 s) on the
             fused kernel and the XLA path, and against K = 2 .. 16 rules (XLA path) at Wolfram's size
 
@@ -178,6 +180,45 @@ def _repeat(block, shape):
     return block[t[:, None, None], x[None, :, None], y[None, None, :]]
 
 
+def suite_rules1d_batch(rec, args):
+    """The rule space where the device is busy: B = 4096 arrays of 64 x 64 at once (vmapped), K rules and radius r."""
+    rng = np.random.default_rng(4)
+    B, N = (256 if args.quick else 4096), 64
+    for K in [2, 4, 8, 16, 32, 64, 128, 256]:
+        rules = sorted(rng.choice(256, K, replace=False).tolist())
+        ras = jnp.asarray(rng.integers(0, K, (B, N, N)).astype(np.int32))
+        ics = jnp.asarray((rng.random((B, N)) < 0.5).astype(np.int8))
+        tables = stica.rule_tables(rules)
+        unp = jax.jit(jax.vmap(lambda ic, ra: stica.rule_array_rollout(ic, ra, tables)))
+        rec("rules1d_b", "unpacked", f"K rules, {B} x {N}^2", K, N, B, B * N * N, B * N * N, lambda: unp(ics, ras))
+        model = _Model(N, K, 1, "alternating", "periodic")
+        planes = jax.vmap(lambda ra: pack_rule_array(ra, K))(ras)
+        icw = jax.vmap(pack_cells)(ics)
+        tm = _tmask(rules, 1)
+        pk = jax.jit(jax.vmap(lambda ic, pl: _simulate_words(ic, pl, tm, model, N)))
+        rec("rules1d_b", "packed", f"K rules, {B} x {N}^2", K, N, B, B * N * N, B * N * N // 8, lambda: pk(icw, planes))
+    for r in (0.5, 1, 2, 3):
+        m = stica.num_inputs(r)
+        rules = [int(rng.integers(0, 2 ** 62)) % (2 ** (2 ** m)) for _ in range(2)]
+        ras = jnp.asarray(rng.integers(0, 2, (B, N, N)).astype(np.int8))
+        ics = jnp.asarray((rng.random((B, N)) < 0.5).astype(np.int8))
+        tables = stica.rule_tables(rules, 2, r)
+        unp = jax.jit(jax.vmap(lambda ic, ra: stica.rule_array_rollout(ic, ra, tables, radius=r)))
+        rec("rules1d_b", "unpacked", f"radius, {B} x {N}^2", 2 ** m, N, B, B * N * N, B * N * N, lambda: unp(ics, ras))
+        model = _Model(N, 2, r, "alternating", "periodic")
+        planes = jax.vmap(lambda ra: pack_rule_array(ra, 2))(ras)
+        icw = jax.vmap(pack_cells)(ics)
+        tm = _tmask(rules, r)
+        pk = jax.jit(jax.vmap(lambda ic, pl: _simulate_words(ic, pl, tm, model, N)))
+        rec("rules1d_b", "packed", f"radius, {B} x {N}^2", 2 ** m, N, B, B * N * N, B * N * N // 8,
+            lambda: pk(icw, planes))
+        if r in (0.5, 1) and jax.default_backend() == "gpu":
+            masks = jnp.moveaxis(jax.vmap(lambda ra: pack_cells(ra == 1))(ras), 0, -1)            # (N, nw, B)
+            icb = jnp.moveaxis(icw, 0, -1)
+            fz = lambda: fused_rollout(icb, masks, rules=tuple(rules), width=N, radius=r)
+            rec("rules1d_b", "fused kernel", f"radius, {B} x {N}^2", 2 ** m, N, B, B * N * N, B * N * N // 8, fz)
+
+
 SHARING = {"spacetime": lambda G: (G, G, G), "time only": lambda G: (G, 1, 1), "space only": lambda G: (1, G, G),
            "homogeneous": lambda G: (1, 1, 1)}
 
@@ -235,8 +276,8 @@ def suite_evo1d(rec, args):
         rec("evo1d", "xla", "K rules", K, 64 * 31, 1024, 1024 * 64 * 64 * 31, 64 * 31 * K.bit_length() // 8, fn)
 
 
-SUITES = dict(grid1d=suite_grid1d, batch1d=suite_batch1d, rules1d=suite_rules1d, grid2d=suite_grid2d,
-              evo1d=suite_evo1d)
+SUITES = dict(grid1d=suite_grid1d, batch1d=suite_batch1d, rules1d=suite_rules1d, rules1d_batch=suite_rules1d_batch,
+              grid2d=suite_grid2d, evo1d=suite_evo1d)
 
 
 def fit(rows) -> list:
@@ -245,8 +286,9 @@ def fit(rows) -> list:
     keys = sorted({(r["suite"], r["impl"], r["series"], r["param"]) for r in rows}, key=str)
     for k in keys:
         pts = sorted((r["cell_updates"], r["seconds"]) for r in rows if (r["suite"], r["impl"], r["series"],
-                                                                          r["param"]) == k)
-        if len(pts) < 3 or k[0] in ("rules1d",):
+                                                                          r["param"]) == k
+                     and not str(r["note"]).startswith("single call"))      # those include compilation
+        if len(pts) < 3 or k[0] in ("rules1d", "rules1d_b"):
             continue
         N, t = (np.array(x, float) for x in zip(*pts))
         A = np.stack([1 / t, N / t], 1)                                    # (t0 + b N) / t = 1
