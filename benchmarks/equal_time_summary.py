@@ -101,6 +101,25 @@ def census_counts(run: Path) -> np.ndarray | None:
     return None if hist is None else np.load(hist)["mutation_counts"]
 
 
+def mutation_stats(values, counts, approximate=0) -> dict:
+    """Median and tail of the mutations behind each solution, from (value, count) pairs."""
+    v, c = np.asarray(values, float), np.asarray(counts, float)
+    if c.sum() == 0:
+        return dict(solutions=0)
+    o = np.argsort(v)
+    v, cdf = v[o], np.cumsum(c[o]) / c.sum()
+    at = lambda q: float(v[np.searchsorted(cdf, q)])
+    le = lambda k: float(c[o][v <= k].sum() / c.sum())
+    return dict(solutions=int(c.sum()), median=at(0.5), q10=at(0.1), q90=at(0.9), min=float(v[0]),
+                frac_le_1000=le(1000), frac_le_10000=le(10000), approximate_frac=approximate / c.sum())
+
+
+def hist_stats(h: dict) -> dict:
+    """mutation_stats of a budget_run histogram (bins above 4096 at their lower edge)."""
+    pairs = h["exact"] + h["above"]
+    return mutation_stats([a for a, _ in pairs], [b for _, b in pairs], h.get("approximate", 0))
+
+
 CHECKPOINTS = [1, 10, 60, 600, 3600]
 
 
@@ -191,19 +210,24 @@ def summarise(run: Path) -> dict:
 
     # ---------------------------------------------------------------- anytime and reach
     def stica_like(res):
-        return dict(lanes=res.get("lanes"), solutions=res["solutions"], seconds=res["seconds"],
-                    first_solution_s=res["first_solution_s"], candidates_per_s=res["candidates_per_s"],
-                    best_loss=res["best_loss"], best_at={t: best_at(res["trace"], t) for t in CHECKPOINTS},
-                    solutions_at={t: best_at(res["trace"], t, col=1) for t in CHECKPOINTS})
+        out = dict(lanes=res.get("lanes"), solutions=res["solutions"], seconds=res["seconds"],
+                   first_solution_s=res["first_solution_s"], candidates_per_s=res["candidates_per_s"],
+                   best_loss=res["best_loss"], best_at={t: best_at(res["trace"], t) for t in CHECKPOINTS},
+                   solutions_at={t: best_at(res["trace"], t, col=1) for t in CHECKPOINTS})
+        if "solution_mutations" in res:                   # runs from before 2026-11-20 did not record them
+            out["mutations"] = hist_stats(res["solution_mutations"])
+        return out
 
     def wl_like(res):
         pk = res["per_kernel"]
         sol_t = sorted(wl_float(s[0]) for k in pk for s in k["solutions"])
+        steps = [int(s[1]) for k in pk for s in k["solutions"]]
         return dict(kernels=res["kernels"], solutions=res["solutions"], seconds=wl_float(res["seconds"]),
-                    first_solution_s=wl_float(res["first_solution_s"]), mutations=res["mutations"],
+                    first_solution_s=wl_float(res["first_solution_s"]), mutations_total=res["mutations"],
                     candidates_per_s=res["mutations"] / wl_float(res["seconds"]),
                     best_at={t: wl_best_at(pk, t) for t in CHECKPOINTS},
-                    solutions_at={t: sum(x <= t for x in sol_t) for t in CHECKPOINTS})
+                    solutions_at={t: sum(x <= t for x in sol_t) for t in CHECKPOINTS},
+                    mutations=mutation_stats(steps, [1] * len(steps)))
 
     anytime = {}
     for impl in ("numba", "stica"):

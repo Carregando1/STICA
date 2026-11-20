@@ -142,7 +142,8 @@ class SticaRunner:
         self.state = res.state
         hit = first[first > 0]
         return dict(seconds=sec, iterations=self.iters, solves=int(solves.sum()),
-                    first_iter=int(hit.min()) if hit.size else -1, best=best)
+                    first_iter=int(hit.min()) if hit.size else -1, best=best,
+                    lane_solves=solves, lane_solve_steps=np.asarray(res.solve_steps))
 
 
 def _numba_chunk_fn():
@@ -152,11 +153,12 @@ def _numba_chunk_fn():
     one = np.uint64(1)
 
     @njit(parallel=True)
-    def run(ic, masks, best, steps, masks0, best0, t0m, t1m, W, target, iters, seeds, restart, solves, first):
+    def run(ic, masks, best, steps, masks0, best0, t0m, t1m, W, target, iters, seeds, restart, solves, first,
+            solve_steps):
         L, T = masks.shape[0], masks.shape[1]
         for lane in prange(L):
             np.random.seed(seeds[lane])
-            b, st, ns, fs = best[lane], steps[lane], 0, -1
+            b, st, ns, fs, ss = best[lane], steps[lane], 0, -1, 0
             for it in range(iters):
                 if b == 0.0 and not restart:
                     break
@@ -174,9 +176,10 @@ def _numba_chunk_fn():
                         fs = it + 1
                     if restart:
                         ns += 1
+                        ss += st
                         masks[lane, :, :] = masks0
                         b, st = best0, 0
-            best[lane], steps[lane], solves[lane], first[lane] = b, st, ns, fs
+            best[lane], steps[lane], solves[lane], first[lane], solve_steps[lane] = b, st, ns, fs, ss
     return run
 
 
@@ -199,6 +202,7 @@ class NumbaRunner:
         self.best = np.full(lanes, self.best0)
         self.steps = np.zeros(lanes, np.int64)
         self.solves, self.first = np.zeros(lanes, np.int64), np.zeros(lanes, np.int64)
+        self.solve_steps = np.zeros(lanes, np.int64)
         self.lanes, self.iters, self.restart = lanes, chunk, restart
         self.rng = np.random.default_rng(seed)
 
@@ -206,11 +210,13 @@ class NumbaRunner:
         seeds = self.rng.integers(0, 2 ** 32 - 1, self.lanes, dtype=np.int64)
         t0 = time.perf_counter()
         NumbaRunner._fn(self.ic, self.masks, self.best, self.steps, self.masks0, self.best0, self.t0m, self.t1m,
-                        self.W, self.target, self.iters, seeds, self.restart, self.solves, self.first)
+                        self.W, self.target, self.iters, seeds, self.restart, self.solves, self.first,
+                        self.solve_steps)
         sec = time.perf_counter() - t0
         hit = self.first[self.first > 0]
         return dict(seconds=sec, iterations=self.iters, solves=int(self.solves.sum()),
-                    first_iter=int(hit.min()) if hit.size else -1, best=self.best.copy())
+                    first_iter=int(hit.min()) if hit.size else -1, best=self.best.copy(),
+                    lane_solves=self.solves.copy(), lane_solve_steps=self.solve_steps.copy())
 
 
 def _tables():
@@ -266,12 +272,45 @@ def calibrate_lanes(args, setup, candidates, seconds_each=3.0) -> dict:
     return dict(best=best, tried=rows)
 
 
+class MutationHistogram:
+    """Mutations each solution took, binned: exactly below 4096, 16 bins per octave above. A lane that solves once in
+    a chunk gives its solution's count exactly (a run may span chunks); a lane that solves k > 1 times gives only the
+    total, so those k solutions get the mean (all but the first lie within the chunk) and are counted as approximate."""
+    EXACT = 4096
+
+    def __init__(self):
+        self.exact = np.zeros(self.EXACT, np.int64)
+        self.octaves = {}
+        self.approximate = 0
+
+    def add(self, lane_solves, lane_steps):
+        k, steps = np.asarray(lane_solves), np.asarray(lane_steps, np.float64)
+        one = k == 1
+        vals = [steps[one], np.repeat(steps[k > 1] / k[k > 1], k[k > 1])]
+        self.approximate += int(k[k > 1].sum())
+        v = np.rint(np.concatenate(vals)).astype(np.int64)
+        small = v[v < self.EXACT]
+        self.exact += np.bincount(small, minlength=self.EXACT)[:self.EXACT]
+        for b in np.floor(16 * np.log2(v[v >= self.EXACT])).astype(int):
+            self.octaves[int(b)] = self.octaves.get(int(b), 0) + 1
+
+    def to_json(self) -> dict:
+        nz = np.flatnonzero(self.exact)
+        return dict(exact=[[int(i), int(self.exact[i])] for i in nz],
+                    above=[[round(2 ** (b / 16)), n] for b, n in sorted(self.octaves.items())],
+                    approximate=self.approximate,
+                    note="exact: [mutations, solutions]; above: [lower bin edge, solutions], 16 bins per octave")
+
+
 def budget_run(runner, budget: float) -> dict:
-    """Advance the runner for `budget` seconds of evolution (compilation excluded): solutions and best loss vs time."""
+    """Advance the runner for `budget` seconds of evolution (compilation excluded): solutions and best loss vs time,
+    and the mutations each solution took."""
     trace, t, solutions, candidates = [], 0.0, 0, 0
     best_ever, first_time = math.inf, None
+    hist = MutationHistogram()
     while t < budget:
         c = runner.chunk()
+        hist.add(c["lane_solves"], c["lane_solve_steps"])
         if first_time is None and c["first_iter"] > 0:
             first_time = t + c["seconds"] * c["first_iter"] / c["iterations"]
         t += c["seconds"]
@@ -283,7 +322,7 @@ def budget_run(runner, budget: float) -> dict:
     return dict(seconds=t, solutions=solutions, candidates=candidates, candidates_per_s=candidates / t,
                 solutions_per_s=solutions / t, first_solution_s=first_time, best_loss=_num(best_ever),
                 trace_columns=["seconds", "solutions", "best_loss_so_far", "lane_min_loss", "lane_median_loss"],
-                trace=trace)
+                trace=trace, solution_mutations=hist.to_json())
 
 
 # ---------------------------------------------------------------------------------------------------- metrics

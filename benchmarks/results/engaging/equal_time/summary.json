@@ -377,7 +377,7 @@
    "solutions": 0,
    "seconds": 3600.2768,
    "first_solution_s": null,
-   "mutations": 2525,
+   "mutations_total": 2525,
    "candidates_per_s": 0.7013349640227662,
    "best_at": {
     "1": null,
@@ -392,6 +392,9 @@
     "60": 0,
     "600": 0,
     "3600": 0
+   },
+   "mutations": {
+    "solutions": 0
    }
   },
   "wolfram_compiled": {
@@ -399,7 +402,7 @@
    "solutions": 7,
    "seconds": 3600.007465,
    "first_solution_s": 409.503272,
-   "mutations": 5151113,
+   "mutations_total": 5151113,
    "candidates_per_s": 1430.8617551713883,
    "best_at": {
     "1": 74.0,
@@ -414,6 +417,16 @@
     "60": 0,
     "600": 2,
     "3600": 7
+   },
+   "mutations": {
+    "solutions": 7,
+    "median": 145918.0,
+    "q10": 53689.0,
+    "q90": 643907.0,
+    "min": 53689.0,
+    "frac_le_1000": 0.0,
+    "frac_le_10000": 0.0,
+    "approximate_frac": 0.0
    }
   }
  },
@@ -556,64 +569,123 @@
     "solutions": 6958,
     "seconds": 600.044374,
     "first_solution_s": 0.013259,
-    "mutations": 15346215,
-    "candidates_per_s": 25575.13354837321
+    "mutations_total": 15346215,
+    "candidates_per_s": 25575.13354837321,
+    "mutations": {
+     "solutions": 6958,
+     "median": 2009.0,
+     "q10": 426.0,
+     "q90": 4131.0,
+     "min": 1.0,
+     "frac_le_1000": 0.21902845645300373,
+     "frac_le_10000": 0.999137683242311,
+     "approximate_frac": 0.0
+    }
    },
    "2": {
     "kernels": 8,
     "solutions": 912,
     "seconds": 600.014704,
     "first_solution_s": 2.922949,
-    "mutations": 9644524,
-    "candidates_per_s": 16073.812751095511
+    "mutations_total": 9644524,
+    "candidates_per_s": 16073.812751095511,
+    "mutations": {
+     "solutions": 912,
+     "median": 10118.0,
+     "q10": 3052.0,
+     "q90": 18731.0,
+     "min": 1.0,
+     "frac_le_1000": 0.04276315789473684,
+     "frac_le_10000": 0.4934210526315789,
+     "approximate_frac": 0.0
+    }
    },
    "4": {
     "kernels": 8,
     "solutions": 77,
     "seconds": 600.008412,
     "first_solution_s": 0.051504,
-    "mutations": 3988708,
-    "candidates_per_s": 6647.753465163085
+    "mutations_total": 3988708,
+    "candidates_per_s": 6647.753465163085,
+    "mutations": {
+     "solutions": 77,
+     "median": 46456.0,
+     "q10": 14494.0,
+     "q90": 70206.0,
+     "min": 28.0,
+     "frac_le_1000": 0.025974025974025976,
+     "frac_le_10000": 0.07792207792207792,
+     "approximate_frac": 0.0
+    }
    },
    "6": {
     "kernels": 8,
     "solutions": 10,
     "seconds": 600.007067,
     "first_solution_s": 287.727363,
-    "mutations": 2139928,
-    "candidates_per_s": 3566.504659185956
+    "mutations_total": 2139928,
+    "candidates_per_s": 3566.504659185956,
+    "mutations": {
+     "solutions": 10,
+     "median": 164712.0,
+     "q10": 101721.0,
+     "q90": 220753.0,
+     "min": 101721.0,
+     "frac_le_1000": 0.0,
+     "frac_le_10000": 0.0,
+     "approximate_frac": 0.0
+    }
    },
    "8": {
     "kernels": 8,
     "solutions": 1,
     "seconds": 600.008225,
     "first_solution_s": 491.497252,
-    "mutations": 1276257,
-    "candidates_per_s": 2127.065841472423
+    "mutations_total": 1276257,
+    "candidates_per_s": 2127.065841472423,
+    "mutations": {
+     "solutions": 1,
+     "median": 99039.0,
+     "q10": 99039.0,
+     "q90": 99039.0,
+     "min": 99039.0,
+     "frac_le_1000": 0.0,
+     "frac_le_10000": 0.0,
+     "approximate_frac": 0.0
+    }
    },
    "10": {
     "kernels": 8,
     "solutions": 0,
     "seconds": 600.008964,
     "first_solution_s": null,
-    "mutations": 882097,
-    "candidates_per_s": 1470.1397027795072
+    "mutations_total": 882097,
+    "candidates_per_s": 1470.1397027795072,
+    "mutations": {
+     "solutions": 0
+    }
    },
    "14": {
     "kernels": 8,
     "solutions": 0,
     "seconds": 600.008671,
     "first_solution_s": null,
-    "mutations": 485094,
-    "candidates_per_s": 808.4783161408678
+    "mutations_total": 485094,
+    "candidates_per_s": 808.4783161408678,
+    "mutations": {
+     "solutions": 0
+    }
    },
    "20": {
     "kernels": 8,
     "solutions": 0,
     "seconds": 600.027681,
     "first_solution_s": null,
-    "mutations": 227213,
-    "candidates_per_s": 378.67086335305254
+    "mutations_total": 227213,
+    "candidates_per_s": 378.67086335305254,
+    "mutations": {
+     "solutions": 0
+    }
    }
   }
  },
